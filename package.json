@@ -1,0 +1,22 @@
+{
+  "name": "wfil-dao",
+  "version": "1.0.0",
+  "description": "WFIL DAO",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "npx truffle compile && mocha --exit --recursive --parallel --timeout 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wfil/wfil-dao.git"
+  },
+  "author": "Nazzareno Massari",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/wfil/wfil-dao/issues"
+  },
+  "homepage": "https://github.com/wfil/wfil-dao#readme"
+}
