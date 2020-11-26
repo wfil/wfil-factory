@@ -18,7 +18,7 @@ interface WFILToken {
   function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
 
-contract WFILGov is AccessControl, Pausable {
+contract WFILFactory is AccessControl, Pausable {
 
     /// @dev Libraries
     using Counters for Counters.Counter;
