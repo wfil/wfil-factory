@@ -1,9 +1,9 @@
 /// SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.6.12;
 
-/// @title WFILGov
+/// @title WFILFactory
 /// @author Nazzareno Massari @naszam
-/// @notice Wrapped Filecoin (WFIL) Governor
+/// @notice Wrapped Filecoin (WFIL) Factory
 /// @dev All function calls are currently implemented without side effects through TDD approach
 /// @dev OpenZeppelin library is used for secure contract development
 
