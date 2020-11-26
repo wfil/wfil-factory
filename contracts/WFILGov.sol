@@ -15,6 +15,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 interface WFILToken {
   function wrap(address to, uint256 amount) external returns (bool);
   function unwrap(uint256 amount) external returns (bool);
+  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
 
 contract WFILGov is AccessControl, Pausable {
@@ -69,6 +70,45 @@ contract WFILGov is AccessControl, Pausable {
         uint timestamp,
         bytes32 requestHash
     );
+    event MintRequestCancel(uint indexed nonce, address indexed requester, bytes32 requestHash);
+    event MintConfirmed(
+        uint indexed nonce,
+        address indexed requester,
+        uint amount,
+        string deposit,
+        string cid,
+        uint timestamp,
+        bytes32 requestHash
+    );
+
+    event MintRejected(
+        uint indexed nonce,
+        address indexed requester,
+        uint amount,
+        string deposit,
+        string cid,
+        uint timestamp,
+        bytes32 requestHash
+    );
+
+    event Burned(
+        uint indexed nonce,
+        address indexed requester,
+        uint amount,
+        string deposit,
+        uint timestamp,
+        bytes32 requestHash
+    );
+
+    event BurnConfirmed(
+        uint indexed nonce,
+        address indexed requester,
+        uint amount,
+        string deposit,
+        string cid,
+        uint timestamp,
+        bytes32 inputRequestHash
+    );
 
     constructor(address wfil_)
         public
@@ -104,7 +144,7 @@ contract WFILGov is AccessControl, Pausable {
         _owner = newOwner;
     }
 
-    function addMintRequest(uint amount, string calldata cid, string calldata deposit)
+    function addMintRequest(uint256 amount, string calldata cid, string calldata deposit)
         external
         returns (bool)
     {
@@ -112,8 +152,8 @@ contract WFILGov is AccessControl, Pausable {
         require(!_isEmptyString(deposit), "WFILGov: invalid filecoin deposit address");
         require(_compareStrings(deposit, custodian[msg.sender]), "WFILGov: wrong filecoin deposit address");
 
-        uint nonce = _mintsIdTracker.current();
-        uint timestamp = _timestamp();
+        uint256 nonce = _mintsIdTracker.current();
+        uint256 timestamp = _timestamp();
 
         mints[nonce].requester = msg.sender;
         mints[nonce].amount = amount;
@@ -129,6 +169,179 @@ contract WFILGov is AccessControl, Pausable {
 
         emit MintRequestAdd(nonce, msg.sender, amount, deposit, cid, timestamp, requestHash);
         return true;
+    }
+
+    function cancelMintRequest(bytes32 requestHash) external returns (bool) {
+        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILGov: caller is not a merchant");
+        uint256 nonce;
+        Request memory request;
+
+        (nonce, request) = _getPendingMintRequest(requestHash);
+
+        require(msg.sender == request.requester, "WFILGov: cancel caller is different than pending request initiator");
+        mints[nonce].status = RequestStatus.CANCELED;
+
+        emit MintRequestCancel(nonce, msg.sender, requestHash);
+        return true;
+    }
+
+    function confirmMintRequest(bytes32 requestHash) external returns (bool) {
+        require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILGov: caller is not a custodian");
+        uint nonce;
+        Request memory request;
+
+        (nonce, request) = _getPendingMintRequest(requestHash);
+
+        mints[nonce].status = RequestStatus.APPROVED;
+        require(wfil.wrap(request.requester, request.amount), "WFILGov: mint failed");
+
+        emit MintConfirmed(
+            request.nonce,
+            request.requester,
+            request.amount,
+            request.deposit,
+            request.cid,
+            request.timestamp,
+            requestHash
+        );
+        return true;
+    }
+
+    function rejectMintRequest(bytes32 requestHash) external returns (bool) {
+        require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILGov: caller is not a custodian");
+        uint nonce;
+        Request memory request;
+
+        (nonce, request) = _getPendingMintRequest(requestHash);
+
+        mints[nonce].status = RequestStatus.REJECTED;
+
+        emit MintRejected(
+            request.nonce,
+            request.requester,
+            request.amount,
+            request.deposit,
+            request.cid,
+            request.timestamp,
+            requestHash
+        );
+        return true;
+    }
+
+    function burn(uint256 amount) external returns (bool) {
+        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILGov: caller is not a merchant");
+
+        string memory deposit = merchant[msg.sender];
+        require(!_isEmptyString(deposit), "WFILGov: merchant filecoin deposit address was not set");
+
+        uint256 nonce = _burnsIdTracker.current();
+        uint256 timestamp = _timestamp();
+
+        // set txid as empty since it is not known yet.
+        string memory cid = "";
+
+        burns[nonce].requester = msg.sender;
+        burns[nonce].amount = amount;
+        burns[nonce].deposit = deposit;
+        burns[nonce].cid = cid;
+        burns[nonce].nonce = nonce;
+        burns[nonce].timestamp = timestamp;
+        burns[nonce].status = RequestStatus.PENDING;
+
+        bytes32 requestHash = _hash(burns[nonce]);
+        burnNonce[requestHash] = nonce;
+        _burnsIdTracker.increment();
+
+        require(wfil.transferFrom(msg.sender, address(this), amount), "WFILGov: transfer tokens to burn failed");
+        require(wfil.unwrap(amount), "WFILGov: burn failed");
+
+        emit Burned(nonce, msg.sender, amount, deposit, timestamp, requestHash);
+        return true;
+    }
+
+    function confirmBurnRequest(bytes32 requestHash, string calldata cid) external returns (bool) {
+        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILGov: caller is not a merchant");
+        uint256 nonce;
+        Request memory request;
+
+        (nonce, request) = _getPendingBurnRequest(requestHash);
+
+        burns[nonce].cid = cid;
+        burns[nonce].status = RequestStatus.APPROVED;
+        burnNonce[_hash(burns[nonce])] = nonce;
+
+        emit BurnConfirmed(
+            request.nonce,
+            request.requester,
+            request.amount,
+            request.deposit,
+            cid,
+            request.timestamp,
+            requestHash
+        );
+        return true;
+    }
+
+    function getMintRequest(uint256 nonce)
+        external
+        view
+        returns (
+            uint256 requestNonce,
+            address requester,
+            uint256 amount,
+            string memory deposit,
+            string memory cid,
+            uint256 timestamp,
+            string memory status,
+            bytes32 requestHash
+        )
+    {
+        Request memory request = mints[nonce];
+        string memory statusString = _getStatusString(request.status);
+
+        requestNonce = request.nonce;
+        requester = request.requester;
+        amount = request.amount;
+        deposit = request.deposit;
+        cid = request.cid;
+        timestamp = request.timestamp;
+        status = statusString;
+        requestHash = _hash(request);
+    }
+
+    function getMintRequestsCount() external view returns (uint256 count) {
+        return _mintsIdTracker.current();
+    }
+
+    function getBurnRequest(uint256 nonce)
+        external
+        view
+        returns (
+            uint256 requestNonce,
+            address requester,
+            uint256 amount,
+            string memory deposit,
+            string memory cid,
+            uint256 timestamp,
+            string memory status,
+            bytes32 requestHash
+        )
+    {
+        Request storage request = burns[nonce];
+        string memory statusString = _getStatusString(request.status);
+
+        requestNonce = request.nonce;
+        requester = request.requester;
+        amount = request.amount;
+        deposit = request.deposit;
+        cid = request.cid;
+        timestamp = request.timestamp;
+        status = statusString;
+        requestHash = _hash(request);
+    }
+
+    function getBurnRequestsCount() external view returns (uint256 count) {
+        return _burnsIdTracker.current();
     }
 
 
@@ -210,6 +423,33 @@ contract WFILGov is AccessControl, Pausable {
           request.nonce,
           request.timestamp
       ));
+  }
+
+  function _getPendingMintRequest(bytes32 requestHash) internal view returns (uint nonce, Request memory request) {
+      require(requestHash != 0, "WFILGov: request hash is 0");
+      nonce = mintNonce[requestHash];
+      request = mints[nonce];
+      _check(request, requestHash);
+  }
+
+  function _getPendingBurnRequest(bytes32 requestHash) internal view returns (uint nonce, Request memory request) {
+      require(requestHash != 0, "WFILGov: request hash is 0");
+      nonce = burnNonce[requestHash];
+      request = burns[nonce];
+      _check(request, requestHash);
+  }
+
+  function _check(Request memory request, bytes32 requestHash) internal pure {
+      require(request.status == RequestStatus.PENDING, "WFILGov: request is not pending");
+      require(requestHash == _hash(request), "WFILGov: given request hash does not match a pending request");
+  }
+
+  function _getStatusString(RequestStatus status) internal pure returns (string memory) {
+      if (status == RequestStatus.PENDING) return "pending";
+      else if (status == RequestStatus.CANCELED) return "canceled";
+      else if (status == RequestStatus.APPROVED) return "approved";
+      else if (status == RequestStatus.REJECTED) return "rejected";
+      else return "unknown";
   }
 
 }
