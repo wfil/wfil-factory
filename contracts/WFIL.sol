@@ -15,10 +15,11 @@ pragma solidity 0.6.12;
  ███ ███  ██      ██ ███████ 
 */
 
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract WFIL is AccessControl, ERC20Pausable {
+contract WFIL is ERC20, AccessControl, Pausable {
 
     /// @dev Roles
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -27,16 +28,16 @@ contract WFIL is AccessControl, ERC20Pausable {
     /// @dev Events
     event Wrapped(address indexed to, uint256 amount);
     event Unwrapped(address indexed account, uint256 amount);
+    event UnwrappedFrom(address indexed account, uint256 amount);
 
-    constructor(address minter_)
+    constructor(address dao_)
         public
         ERC20("Wrapped Filecoin", "WFIL")
     {
-        require(minter_ != address(0), "WFIL: minter set to zero address");
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        require(dao_ != address(0), "WFIL: dao set to zero address");
+        _setupRole(DEFAULT_ADMIN_ROLE, dao_);
 
-        _setupRole(PAUSER_ROLE, msg.sender);
-        _setupRole(MINTER_ROLE, minter_);
+        _setupRole(PAUSER_ROLE, dao_);
     }
 
     /// @notice Fallback function
@@ -67,6 +68,16 @@ contract WFIL is AccessControl, ERC20Pausable {
         require(amount > 0, "WFIL: amount is zero");
         _burn(msg.sender, amount);
         emit Unwrapped(msg.sender, amount);
+        return true;
+    }
+
+    function unwrapFrom(address account, uint256 amount) external returns (bool) {
+        require(amount > 0, "WFIL: amount is zero");
+        uint256 decreasedAllowance = allowance(account, msg.sender).sub(amount, "WFIL: burn amount exceeds allowance");
+
+        _approve(account, msg.sender, decreasedAllowance);
+        _burn(account, amount);
+        emit UnwrappedFrom(account, amount);
         return true;
     }
 
@@ -106,8 +117,9 @@ contract WFIL is AccessControl, ERC20Pausable {
     /// @param from Sender address
     /// @param to Recipient address
     /// @param amount Token amount
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override(ERC20Pausable) {
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override(ERC20) {
         require(to != address(this), "WFIL: transfer to the token contract");
         super._beforeTokenTransfer(from, to, amount);
+        require(!paused(), "WFIL: token transfer while paused");
     }
 }
