@@ -14,8 +14,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 interface WFILToken {
   function wrap(address to, uint256 amount) external returns (bool);
-  function unwrap(uint256 amount) external returns (bool);
-  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+  function unwrapFrom(address account, uint256 amount) external returns (bool);
 }
 
 contract WFILFactory is AccessControl, Pausable {
@@ -144,7 +143,7 @@ contract WFILFactory is AccessControl, Pausable {
         _owner = newOwner;
     }
 
-    function addMintRequest(uint256 amount, string calldata cid, string calldata deposit)
+    function addMintRequest(uint256 amount, string calldata deposit)
         external
         returns (bool)
     {
@@ -154,6 +153,9 @@ contract WFILFactory is AccessControl, Pausable {
 
         uint256 nonce = _mintsIdTracker.current();
         uint256 timestamp = _timestamp();
+
+        // set cid as empty since it is not known yet.
+        string memory cid = "";
 
         mints[nonce].requester = msg.sender;
         mints[nonce].amount = amount;
@@ -185,13 +187,14 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
-    function confirmMintRequest(bytes32 requestHash) external returns (bool) {
+    function confirmMintRequest(bytes32 requestHash, string calldata cid) external returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILGov: caller is not a custodian");
         uint nonce;
         Request memory request;
 
         (nonce, request) = _getPendingMintRequest(requestHash);
 
+        mints[nonce].cid = cid;
         mints[nonce].status = RequestStatus.APPROVED;
         require(wfil.wrap(request.requester, request.amount), "WFILGov: mint failed");
 
@@ -237,7 +240,7 @@ contract WFILFactory is AccessControl, Pausable {
         uint256 nonce = _burnsIdTracker.current();
         uint256 timestamp = _timestamp();
 
-        // set txid as empty since it is not known yet.
+        // set cid as empty since it is not known yet.
         string memory cid = "";
 
         burns[nonce].requester = msg.sender;
@@ -252,8 +255,7 @@ contract WFILFactory is AccessControl, Pausable {
         burnNonce[requestHash] = nonce;
         _burnsIdTracker.increment();
 
-        require(wfil.transferFrom(msg.sender, address(this), amount), "WFILGov: transfer tokens to burn failed");
-        require(wfil.unwrap(amount), "WFILGov: burn failed");
+        require(wfil.unwrapFrom(msg.sender, amount), "WFILGov: burn failed");
 
         emit Burned(nonce, msg.sender, amount, deposit, timestamp, requestHash);
         return true;
