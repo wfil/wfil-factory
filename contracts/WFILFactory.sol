@@ -60,6 +60,8 @@ contract WFILFactory is AccessControl, Pausable {
 
     /// @dev Events
     event OwnerChanged(address indexed previousOwner, address indexed newOwner);
+    event CustodianDepositSet(address indexed merchant, address indexed sender, string deposit);
+    event MerchantDepositSet(address indexed merchant, string deposit);
     event MintRequestAdd(
         uint indexed nonce,
         address indexed requester,
@@ -112,7 +114,7 @@ contract WFILFactory is AccessControl, Pausable {
     constructor(address wfil_)
         public
     {
-        require(wfil_ != address(0), "WFILGov: wfil token set to zero address");
+        require(wfil_ != address(0), "WFILFactory: wfil token set to zero address");
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(PAUSER_ROLE, msg.sender);
 
@@ -137,19 +139,45 @@ contract WFILFactory is AccessControl, Pausable {
     /// @notice Change the owner address
     /// @param newOwner The address of the new owner
     function setOwner(address newOwner) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILGov: caller is not the default admin");
-        require(newOwner != address(0), "WFILGov: new owner is the zero address");
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
+        require(newOwner != address(0), "WFILFactory: new owner is the zero address");
         emit OwnerChanged(_owner, newOwner);
         _owner = newOwner;
+    }
+
+    function setCustodianDeposit(address _merchant, string calldata deposit)
+      external
+      returns (bool)
+    {
+        require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
+        require(_merchant != address(0), "WFILFactory: invalid merchant address");
+        require(hasRole(MERCHANT_ROLE, _merchant), "WFILFactory: caller is not a merchant");
+        require(!_isEmptyString(deposit), "WFILFactory: invalid asset deposit address");
+
+        custodian[_merchant] = deposit;
+        emit CustodianDepositSet(_merchant, msg.sender, deposit);
+        return true;
+    }
+
+    function setMerchantDeposit(string calldata deposit)
+        external
+        returns (bool)
+    {
+        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
+        require(!_isEmptyString(deposit), "WFILFactory: invalid asset deposit address");
+
+        merchant[msg.sender] = deposit;
+        emit MerchantDepositSet(msg.sender, deposit);
+        return true;
     }
 
     function addMintRequest(uint256 amount, string calldata deposit)
         external
         returns (bool)
     {
-        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILGov: caller is not a merchant");
-        require(!_isEmptyString(deposit), "WFILGov: invalid filecoin deposit address");
-        require(_compareStrings(deposit, custodian[msg.sender]), "WFILGov: wrong filecoin deposit address");
+        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
+        require(!_isEmptyString(deposit), "WFILFactory: invalid filecoin deposit address");
+        require(_compareStrings(deposit, custodian[msg.sender]), "WFILFactory: wrong filecoin deposit address");
 
         uint256 nonce = _mintsIdTracker.current();
         uint256 timestamp = _timestamp();
@@ -174,13 +202,13 @@ contract WFILFactory is AccessControl, Pausable {
     }
 
     function cancelMintRequest(bytes32 requestHash) external returns (bool) {
-        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILGov: caller is not a merchant");
+        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         uint256 nonce;
         Request memory request;
 
         (nonce, request) = _getPendingMintRequest(requestHash);
 
-        require(msg.sender == request.requester, "WFILGov: cancel caller is different than pending request initiator");
+        require(msg.sender == request.requester, "WFILFactory: cancel caller is different than pending request initiator");
         mints[nonce].status = RequestStatus.CANCELED;
 
         emit MintRequestCancel(nonce, msg.sender, requestHash);
@@ -188,7 +216,7 @@ contract WFILFactory is AccessControl, Pausable {
     }
 
     function confirmMintRequest(bytes32 requestHash, string calldata cid) external returns (bool) {
-        require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILGov: caller is not a custodian");
+        require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         uint nonce;
         Request memory request;
 
@@ -196,7 +224,7 @@ contract WFILFactory is AccessControl, Pausable {
 
         mints[nonce].cid = cid;
         mints[nonce].status = RequestStatus.APPROVED;
-        require(wfil.wrap(request.requester, request.amount), "WFILGov: mint failed");
+        require(wfil.wrap(request.requester, request.amount), "WFILFactory: mint failed");
 
         emit MintConfirmed(
             request.nonce,
@@ -211,7 +239,7 @@ contract WFILFactory is AccessControl, Pausable {
     }
 
     function rejectMintRequest(bytes32 requestHash) external returns (bool) {
-        require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILGov: caller is not a custodian");
+        require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         uint nonce;
         Request memory request;
 
@@ -232,10 +260,10 @@ contract WFILFactory is AccessControl, Pausable {
     }
 
     function burn(uint256 amount) external returns (bool) {
-        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILGov: caller is not a merchant");
+        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
 
         string memory deposit = merchant[msg.sender];
-        require(!_isEmptyString(deposit), "WFILGov: merchant filecoin deposit address was not set");
+        require(!_isEmptyString(deposit), "WFILFactory: merchant filecoin deposit address was not set");
 
         uint256 nonce = _burnsIdTracker.current();
         uint256 timestamp = _timestamp();
@@ -255,14 +283,14 @@ contract WFILFactory is AccessControl, Pausable {
         burnNonce[requestHash] = nonce;
         _burnsIdTracker.increment();
 
-        require(wfil.unwrapFrom(msg.sender, amount), "WFILGov: burn failed");
+        require(wfil.unwrapFrom(msg.sender, amount), "WFILFactory: burn failed");
 
         emit Burned(nonce, msg.sender, amount, deposit, timestamp, requestHash);
         return true;
     }
 
     function confirmBurnRequest(bytes32 requestHash, string calldata cid) external returns (bool) {
-        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILGov: caller is not a merchant");
+        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         uint256 nonce;
         Request memory request;
 
@@ -351,7 +379,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Access restricted only for Default Admin
     /// @param token IERC20 address of the token contract
     function reclaimToken(IERC20 token) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILGov: caller is not the default admin");
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         uint256 balance = token.balanceOf(address(this));
         token.safeTransfer(_owner, balance);
     }
@@ -361,7 +389,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Access restricted only for Default Admin
     /// @param account Address of the new Custodian
     function addCustodian(address account) external returns (bool) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILGov: caller is not the default admin");
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         grantRole(CUSTODIAN_ROLE, account);
     }
 
@@ -369,7 +397,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Access restricted only for Default Admin
     /// @param account Address of the Custodian
     function removeCustodian(address account) external returns (bool) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILGov: caller is not the default admin");
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         revokeRole(CUSTODIAN_ROLE, account);
     }
 
@@ -377,7 +405,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Access restricted only for Default Admin
     /// @param account Address of the new Merchant
     function addMerchant(address account) external returns (bool) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILGov: caller is not the default admin");
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         grantRole(MERCHANT_ROLE, account);
     }
 
@@ -385,21 +413,21 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Access restricted only for Default Admin
     /// @param account Address of the Merchant
     function removeMerchant(address account) external returns (bool) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILGov: caller is not the default admin");
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         revokeRole(MERCHANT_ROLE, account);
     }
 
     /// @notice Pause all the functions
     /// @dev the caller must have the 'PAUSER_ROLE'
     function pause() external {
-        require(hasRole(PAUSER_ROLE, msg.sender), "WFILGov: must have pauser role to pause");
+        require(hasRole(PAUSER_ROLE, msg.sender), "WFILFactory: must have pauser role to pause");
         _pause();
     }
 
     /// @notice Unpause all the functions
     /// @dev the caller must have the 'PAUSER_ROLE'
     function unpause() external {
-        require(hasRole(PAUSER_ROLE, msg.sender), "WFILGov: must have pauser role to unpause");
+        require(hasRole(PAUSER_ROLE, msg.sender), "WFILFactory: must have pauser role to unpause");
         _unpause();
     }
 
@@ -428,22 +456,22 @@ contract WFILFactory is AccessControl, Pausable {
   }
 
   function _getPendingMintRequest(bytes32 requestHash) internal view returns (uint nonce, Request memory request) {
-      require(requestHash != 0, "WFILGov: request hash is 0");
+      require(requestHash != 0, "WFILFactory: request hash is 0");
       nonce = mintNonce[requestHash];
       request = mints[nonce];
       _check(request, requestHash);
   }
 
   function _getPendingBurnRequest(bytes32 requestHash) internal view returns (uint nonce, Request memory request) {
-      require(requestHash != 0, "WFILGov: request hash is 0");
+      require(requestHash != 0, "WFILFactory: request hash is 0");
       nonce = burnNonce[requestHash];
       request = burns[nonce];
       _check(request, requestHash);
   }
 
   function _check(Request memory request, bytes32 requestHash) internal pure {
-      require(request.status == RequestStatus.PENDING, "WFILGov: request is not pending");
-      require(requestHash == _hash(request), "WFILGov: given request hash does not match a pending request");
+      require(request.status == RequestStatus.PENDING, "WFILFactory: request is not pending");
+      require(requestHash == _hash(request), "WFILFactory: given request hash does not match a pending request");
   }
 
   function _getStatusString(RequestStatus status) internal pure returns (string memory) {
