@@ -224,7 +224,6 @@ contract WFILFactory is AccessControl, Pausable {
 
         mints[nonce].cid = cid;
         mints[nonce].status = RequestStatus.APPROVED;
-        require(wfil.wrap(request.requester, request.amount), "WFILFactory: mint failed");
 
         emit MintConfirmed(
             request.nonce,
@@ -235,6 +234,9 @@ contract WFILFactory is AccessControl, Pausable {
             request.timestamp,
             requestHash
         );
+
+        require(wfil.wrap(request.requester, request.amount), "WFILFactory: mint failed");
+
         return true;
     }
 
@@ -283,9 +285,10 @@ contract WFILFactory is AccessControl, Pausable {
         burnNonce[requestHash] = nonce;
         _burnsIdTracker.increment();
 
+        emit Burned(nonce, msg.sender, amount, deposit, timestamp, requestHash);
+
         require(wfil.unwrapFrom(msg.sender, amount), "WFILFactory: burn failed");
 
-        emit Burned(nonce, msg.sender, amount, deposit, timestamp, requestHash);
         return true;
     }
 
