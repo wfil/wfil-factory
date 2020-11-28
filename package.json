@@ -25,5 +25,11 @@
     "ganache-cli": "^6.12.1",
     "solhint": "^3.3.2",
     "truffle": "^5.1.54"
+  },
+  "devDependencies": {
+    "@openzeppelin/test-environment": "^0.1.8",
+    "@openzeppelin/test-helpers": "^0.5.9",
+    "chai": "^4.2.0",
+    "mocha": "^8.2.1"
   }
 }
