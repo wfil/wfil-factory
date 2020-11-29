@@ -87,7 +87,7 @@ const deposit = 't3q32q2hmq63tpgejlsuubkqjpfqhv75vu2ieg2jhyqhob7dikuftf4mjhobueu
       expect(await factory.custodian(merchant)).to.equal(deposit);
     });
 
-    it('should emit the appropriate event when new custodian address is set', async () => {
+    it('should emit the appropriate event when new custodian deposit address is set', async () => {
       const receipt = await factory.setCustodianDeposit(merchant, deposit, {from: custodian});
       expectEvent(receipt, 'CustodianDepositSet', { merchant: merchant, custodian: custodian, deposit: deposit });
     });
@@ -98,6 +98,22 @@ const deposit = 't3q32q2hmq63tpgejlsuubkqjpfqhv75vu2ieg2jhyqhob7dikuftf4mjhobueu
 
     it('other accounts cannot set a new custodian deposit address', async function () {
       await expectRevert(factory.setCustodianDeposit(merchant, deposit, { from: other }),'WFILFactory: caller is not a custodian');
+    });
+  });
+
+  describe('setMerchantDeposit()', function () {
+    it('merchant can set merchant deposit address', async function () {
+      const receipt = await factory.setMerchantDeposit(deposit, { from: merchant });
+      expect(await factory.merchant(merchant)).to.equal(deposit);
+    });
+
+    it('should emit the appropriate event when new merchant deposit address is set', async () => {
+      const receipt = await factory.setMerchantDeposit(deposit, {from: merchant});
+      expectEvent(receipt, 'MerchantDepositSet', { merchant: merchant, deposit: deposit });
+    });
+
+    it('other accounts cannot set a new merchant deposit address', async function () {
+      await expectRevert(factory.setMerchantDeposit(deposit, { from: other }),'WFILFactory: caller is not a merchant');
     });
   });
 
