@@ -111,14 +111,16 @@ contract WFILFactory is AccessControl, Pausable {
         bytes32 inputRequestHash
     );
 
-    constructor(address wfil_)
+    constructor(address wfil_, address owner_)
         public
     {
         require(wfil_ != address(0), "WFILFactory: wfil token set to zero address");
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(PAUSER_ROLE, msg.sender);
+        require(owner_ != address(0), "WFILFactory: wfil token set to zero address");
 
-        _owner = msg.sender;
+        _setupRole(DEFAULT_ADMIN_ROLE, owner_);
+        _setupRole(PAUSER_ROLE, owner_);
+
+        _owner = owner_;
 
         wfil = WFILToken(wfil_);
 
@@ -393,6 +395,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @param account Address of the new Custodian
     function addCustodian(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
+        require(account != address(0), "WFILFactory: account is the zero address");
         grantRole(CUSTODIAN_ROLE, account);
     }
 
@@ -409,6 +412,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @param account Address of the new Merchant
     function addMerchant(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
+        require(account != address(0), "WFILFactory: account is the zero address");
         grantRole(MERCHANT_ROLE, account);
     }
 
