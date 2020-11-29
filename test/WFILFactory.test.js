@@ -4,7 +4,7 @@
 
 const { accounts, contract, web3 } = require('@openzeppelin/test-environment');
 
-const { BN, constants, expectEvent, expectRevert, send, ether } = require('@openzeppelin/test-helpers');
+const { BN, constants, expectEvent, expectRevert, send, ether, time } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
 const { expect } = require('chai');
@@ -27,6 +27,7 @@ const CUSTODIAN_ROLE = web3.utils.soliditySha3('CUSTODIAN_ROLE');
 const PAUSER_ROLE = web3.utils.soliditySha3('PAUSER_ROLE');
 
 const ZERO = 0;
+const nonce = '0';
 
 const deposit = 't3q32q2hmq63tpgejlsuubkqjpfqhv75vu2ieg2jhyqhob7dikuftf4mjhobueuurnb77v67rnhr7diz6l2iaq';
 
@@ -115,6 +116,39 @@ const deposit = 't3q32q2hmq63tpgejlsuubkqjpfqhv75vu2ieg2jhyqhob7dikuftf4mjhobueu
     it('other accounts cannot set a new merchant deposit address', async function () {
       await expectRevert(factory.setMerchantDeposit(deposit, { from: other }),'WFILFactory: caller is not a merchant');
     });
+  });
+
+  describe('addMintRequest()', function () {
+    beforeEach(async function () {
+      await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+      await time.advanceBlock();
+    });
+
+    it('merchant can add a mint request', async function () {
+      await factory.addMintRequest(amount, deposit, { from: merchant });
+      const timestamp = await time.latest();
+      const cid = '';
+      const receipt = await factory.getMintRequest(nonce, {from: other});
+      expect(receipt.requestNonce).to.be.bignumber.equal(nonce);
+      expect(receipt.requester).to.equal(merchant);
+      expect(receipt.amount).to.be.bignumber.equal(amount);
+      expect(receipt.deposit).to.equal(deposit);
+      expect(receipt.cid).to.equal("");
+      expect(receipt.timestamp).to.be.bignumber.equal(timestamp);
+      expect(receipt.status).to.equal('pending');
+      //expect(receipt.requestHash).to.equal(requestHash);
+    });
+
+    it('should emit the appropriate event when a merchant add a mint request', async () => {
+      const receipt = await factory.addMintRequest(amount, deposit, {from: merchant});
+      const timestamp = await time.latest();
+      expectEvent(receipt, 'MintRequestAdd', { nonce: nonce, requester: merchant, amount: amount, deposit: deposit, cid: '', timestamp: timestamp });
+    });
+
+    it('other accounts cannot add a mint request', async function () {
+      await expectRevert(factory.addMintRequest(amount, deposit, { from: other }),'WFILFactory: caller is not a merchant');
+    });
+
   });
 
   describe("addCustodian()", async () => {
