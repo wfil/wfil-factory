@@ -4,6 +4,7 @@
     "compiler-version": "off",
     "reason-string": "off",
     "payable-fallback": "off",
-    "var-name-mixedcase": "off"
+    "var-name-mixedcase": "off",
+    "not-rely-on-time": "off"
    }
 }
