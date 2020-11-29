@@ -60,7 +60,7 @@ contract WFILFactory is AccessControl, Pausable {
 
     /// @dev Events
     event OwnerChanged(address indexed previousOwner, address indexed newOwner);
-    event CustodianDepositSet(address indexed merchant, address indexed sender, string deposit);
+    event CustodianDepositSet(address indexed merchant, address indexed custodian, string deposit);
     event MerchantDepositSet(address indexed merchant, string deposit);
     event MintRequestAdd(
         uint indexed nonce,
