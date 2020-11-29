@@ -129,7 +129,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @notice Fallback function
     /// @dev Added not payable to revert transactions not matching any other function which send value
     fallback() external {
-        revert();
+        revert("WFILFactory: function not matching any other");
     }
 
     /// @dev Returns the address of the contract owner
@@ -143,6 +143,8 @@ contract WFILFactory is AccessControl, Pausable {
     function setOwner(address newOwner) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         require(newOwner != address(0), "WFILFactory: new owner is the zero address");
+        grantRole(DEFAULT_ADMIN_ROLE, newOwner);
+        renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
         emit OwnerChanged(_owner, newOwner);
         _owner = newOwner;
     }
