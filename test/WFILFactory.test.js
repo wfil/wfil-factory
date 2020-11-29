@@ -16,7 +16,7 @@ let wfil;
 let factory;
 
 describe('WFIL', function () {
-const [ deployer, dao, owner, merchant, custodian, other ] = accounts;
+const [ deployer, dao, owner, newOwner, merchant, custodian, other ] = accounts;
 
 
 const amount = ether('10');
@@ -53,6 +53,27 @@ const ZERO = 0;
   describe('fallback()', async function () {
     it('should revert when sending ether to contract address', async function () {
         await expectRevert.unspecified(send.ether(other, factory.address, 1));
+    });
+  });
+
+  describe('setOwner()', function () {
+    it('default admin can set a new owner', async function () {
+      const receipt = await factory.setOwner(newOwner, { from: owner });
+      expect(await factory.getRoleMember(DEFAULT_ADMIN_ROLE, 0)).to.equal(newOwner);
+    });
+
+    it('should emit the appropriate event when newOwner is set', async () => {
+      const receipt = await factory.setOwner(newOwner, {from: owner});
+      expectEvent(receipt, 'OwnerChanged', { previousOwner: owner , newOwner: newOwner });
+      expectEvent(receipt, 'RoleGranted', { account: newOwner });
+    });
+
+    it("should revert when account is set to zero address", async () => {
+      await expectRevert(factory.setOwner(ZERO_ADDRESS, {from:owner}), 'WFILFactory: new owner is the zero address');
+    })
+
+    it('other accounts cannot set a new owner', async function () {
+      await expectRevert(factory.setOwner(newOwner, { from: other }),'WFILFactory: caller is not the default admin');
     });
   });
 
