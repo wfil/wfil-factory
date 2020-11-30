@@ -28,7 +28,7 @@ contract WFILFactory is AccessControl, Pausable {
       address requester; // sender of the request.
       uint256 amount; // amount of fil to mint/burn.
       string deposit; // custodian's fil address in mint, merchant's fil address in burn.
-      string cid; // filcoin cid for sending/redeeming fil in the mint/burn process.
+      string txId; // filcoin txId for sending/redeeming fil in the mint/burn process.
       uint256 nonce; // serial number allocated for each request.
       uint256 timestamp; // time of the request creation.
       RequestStatus status; // status of the request.
@@ -67,7 +67,7 @@ contract WFILFactory is AccessControl, Pausable {
         address indexed requester,
         uint amount,
         string deposit,
-        string cid,
+        string txId,
         uint timestamp,
         bytes32 requestHash
     );
@@ -77,7 +77,7 @@ contract WFILFactory is AccessControl, Pausable {
         address indexed requester,
         uint amount,
         string deposit,
-        string cid,
+        string txId,
         uint timestamp,
         bytes32 requestHash
     );
@@ -87,7 +87,7 @@ contract WFILFactory is AccessControl, Pausable {
         address indexed requester,
         uint amount,
         string deposit,
-        string cid,
+        string txId,
         uint timestamp,
         bytes32 requestHash
     );
@@ -106,7 +106,7 @@ contract WFILFactory is AccessControl, Pausable {
         address indexed requester,
         uint amount,
         string deposit,
-        string cid,
+        string txId,
         uint timestamp,
         bytes32 inputRequestHash
     );
@@ -188,13 +188,13 @@ contract WFILFactory is AccessControl, Pausable {
         uint256 nonce = _mintsIdTracker.current();
         uint256 timestamp = _timestamp();
 
-        // set cid as empty since it is not known yet.
-        string memory cid = "";
+        // set txId as empty since it is not known yet.
+        string memory txId = "";
 
         mints[nonce].requester = msg.sender;
         mints[nonce].amount = amount;
         mints[nonce].deposit = deposit;
-        mints[nonce].cid = cid;
+        mints[nonce].txId = txId;
         mints[nonce].nonce = nonce;
         mints[nonce].timestamp = timestamp;
         mints[nonce].status = RequestStatus.PENDING;
@@ -203,7 +203,7 @@ contract WFILFactory is AccessControl, Pausable {
         mintNonce[requestHash] = nonce;
         _mintsIdTracker.increment();
 
-        emit MintRequestAdd(nonce, msg.sender, amount, deposit, cid, timestamp, requestHash);
+        emit MintRequestAdd(nonce, msg.sender, amount, deposit, txId, timestamp, requestHash);
         return true;
     }
 
@@ -219,12 +219,12 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
-    function confirmMintRequest(bytes32 requestHash, string calldata cid) external returns (bool) {
+    function confirmMintRequest(bytes32 requestHash, string calldata txId) external returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
 
         (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
 
-        mints[nonce].cid = cid;
+        mints[nonce].txId = txId;
         mints[nonce].status = RequestStatus.APPROVED;
 
         emit MintConfirmed(
@@ -232,7 +232,7 @@ contract WFILFactory is AccessControl, Pausable {
             request.requester,
             request.amount,
             request.deposit,
-            cid,
+            txId,
             request.timestamp,
             requestHash
         );
@@ -254,7 +254,7 @@ contract WFILFactory is AccessControl, Pausable {
             request.requester,
             request.amount,
             request.deposit,
-            request.cid,
+            request.txId,
             request.timestamp,
             requestHash
         );
@@ -270,13 +270,13 @@ contract WFILFactory is AccessControl, Pausable {
         uint256 nonce = _burnsIdTracker.current();
         uint256 timestamp = _timestamp();
 
-        // set cid as empty since it is not known yet.
-        string memory cid = "";
+        // set txId as empty since it is not known yet.
+        string memory txId = "";
 
         burns[nonce].requester = msg.sender;
         burns[nonce].amount = amount;
         burns[nonce].deposit = deposit;
-        burns[nonce].cid = cid;
+        burns[nonce].txId = txId;
         burns[nonce].nonce = nonce;
         burns[nonce].timestamp = timestamp;
         burns[nonce].status = RequestStatus.PENDING;
@@ -292,14 +292,14 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
-    function confirmBurnRequest(bytes32 requestHash, string calldata cid) external returns (bool) {
+    function confirmBurnRequest(bytes32 requestHash, string calldata txId) external returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         uint256 nonce;
         Request memory request;
 
         (nonce, request) = _getPendingBurnRequest(requestHash);
 
-        burns[nonce].cid = cid;
+        burns[nonce].txId = txId;
         burns[nonce].status = RequestStatus.APPROVED;
         burnNonce[_hash(burns[nonce])] = nonce;
 
@@ -308,7 +308,7 @@ contract WFILFactory is AccessControl, Pausable {
             request.requester,
             request.amount,
             request.deposit,
-            cid,
+            txId,
             request.timestamp,
             requestHash
         );
@@ -323,7 +323,7 @@ contract WFILFactory is AccessControl, Pausable {
             address requester,
             uint256 amount,
             string memory deposit,
-            string memory cid,
+            string memory txId,
             uint256 timestamp,
             string memory status,
             bytes32 requestHash
@@ -336,7 +336,7 @@ contract WFILFactory is AccessControl, Pausable {
         requester = request.requester;
         amount = request.amount;
         deposit = request.deposit;
-        cid = request.cid;
+        txId = request.txId;
         timestamp = request.timestamp;
         status = statusString;
         requestHash = _hash(request);
@@ -354,7 +354,7 @@ contract WFILFactory is AccessControl, Pausable {
             address requester,
             uint256 amount,
             string memory deposit,
-            string memory cid,
+            string memory txId,
             uint256 timestamp,
             string memory status,
             bytes32 requestHash
@@ -367,7 +367,7 @@ contract WFILFactory is AccessControl, Pausable {
         requester = request.requester;
         amount = request.amount;
         deposit = request.deposit;
-        cid = request.cid;
+        txId = request.txId;
         timestamp = request.timestamp;
         status = statusString;
         requestHash = _hash(request);
@@ -455,7 +455,7 @@ contract WFILFactory is AccessControl, Pausable {
           request.requester,
           request.amount,
           request.deposit,
-          request.cid,
+          request.txId,
           request.nonce,
           request.timestamp
       ));
