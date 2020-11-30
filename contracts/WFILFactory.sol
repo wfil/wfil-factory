@@ -234,7 +234,7 @@ contract WFILFactory is AccessControl, Pausable {
             request.requester,
             request.amount,
             request.deposit,
-            request.cid,
+            cid,
             request.timestamp,
             requestHash
         );
