@@ -15,7 +15,7 @@ const WFILFactory = contract.fromArtifact('WFILFactory');
 let wfil;
 let factory;
 
-describe('WFIL', function () {
+describe('WFILFactory', function () {
 const [ deployer, dao, owner, newOwner, merchant, merchant2, custodian, custodian2, other ] = accounts;
 
 
@@ -30,10 +30,12 @@ const ZERO = 0;
 const nonce = '0';
 
 const deposit = 't3q32q2hmq63tpgejlsuubkqjpfqhv75vu2ieg2jhyqhob7dikuftf4mjhobueuurnb77v67rnhr7diz6l2iaq';
+const cid = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
 
   beforeEach(async function () {
     wfil = await WFIL.new(dao, { from: deployer });
     factory = await WFILFactory.new(wfil.address, owner, { from: deployer });
+    await wfil.addMinter(factory.address, {from: dao});
     await factory.addCustodian(custodian, {from: owner});
     await factory.addMerchant(merchant, {from:owner});
   });
@@ -177,6 +179,35 @@ const deposit = 't3q32q2hmq63tpgejlsuubkqjpfqhv75vu2ieg2jhyqhob7dikuftf4mjhobueu
       await expectRevert(factory.cancelMintRequest(requestHash, { from: other }),'WFILFactory: caller is not a merchant');
     });
   });
+
+  describe('confirmMintRequest()', function () {
+    beforeEach(async function () {
+      await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+    });
+
+    it('custodian can confirm a mint request', async function () {
+      const { logs } =await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await factory.confirmMintRequest(requestHash, cid, { from: custodian });
+      const receipt = await factory.getMintRequest(nonce, {from: other});
+      expect(receipt.status).to.equal('approved');
+    });
+
+    it('should emit the appropriate event when a custodian confirm a mint request', async () => {
+      const { logs } =await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      const timestamp = logs[0].args.timestamp;
+      const receipt = await factory.confirmMintRequest(requestHash, cid, {from: custodian});
+      expectEvent(receipt, 'MintConfirmed', { nonce: nonce, requester: merchant, amount: amount, deposit: deposit, cid: cid, timestamp: timestamp, requestHash: requestHash });
+    });
+
+    it('other accounts cannot confirm a mint request', async function () {
+      const { logs } =await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await expectRevert(factory.confirmMintRequest(requestHash, cid, { from: other }),'WFILFactory: caller is not a custodian');
+    });
+  });
+
 
 
   describe("addCustodian()", async () => {
