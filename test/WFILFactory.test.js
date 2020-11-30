@@ -125,8 +125,9 @@ const deposit = 't3q32q2hmq63tpgejlsuubkqjpfqhv75vu2ieg2jhyqhob7dikuftf4mjhobueu
     });
 
     it('merchant can add a mint request', async function () {
-      await factory.addMintRequest(amount, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, deposit, { from: merchant });
       const timestamp = await time.latest();
+      const requestHash = logs[0].args.requestHash;
       const cid = '';
       const receipt = await factory.getMintRequest(nonce, {from: other});
       expect(receipt.requestNonce).to.be.bignumber.equal(nonce);
@@ -136,7 +137,7 @@ const deposit = 't3q32q2hmq63tpgejlsuubkqjpfqhv75vu2ieg2jhyqhob7dikuftf4mjhobueu
       expect(receipt.cid).to.equal("");
       expect(receipt.timestamp).to.be.bignumber.equal(timestamp);
       expect(receipt.status).to.equal('pending');
-      //expect(receipt.requestHash).to.equal(requestHash);
+      expect(receipt.requestHash).to.equal(requestHash);
     });
 
     it('should emit the appropriate event when a merchant add a mint request', async () => {
@@ -150,7 +151,7 @@ const deposit = 't3q32q2hmq63tpgejlsuubkqjpfqhv75vu2ieg2jhyqhob7dikuftf4mjhobueu
     });
 
   });
-
+  
   describe("addCustodian()", async () => {
       it("default admin should be able to add a new custodian", async () => {
         await factory.addCustodian(custodian2, {from:owner});
