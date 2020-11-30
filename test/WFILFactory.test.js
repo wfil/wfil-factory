@@ -208,6 +208,33 @@ const cid = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
   });
 
+  describe('rejectMintRequest()', function () {
+    beforeEach(async function () {
+      await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+    });
+
+    it('custodian can reject a mint request', async function () {
+      const { logs } =await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await factory.rejectMintRequest(requestHash, { from: custodian });
+      const receipt = await factory.getMintRequest(nonce, {from: other});
+      expect(receipt.status).to.equal('rejected');
+    });
+
+    it('should emit the appropriate event when a custodian reject a mint request', async () => {
+      const { logs } =await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      const timestamp = logs[0].args.timestamp;
+      const receipt = await factory.rejectMintRequest(requestHash, {from: custodian});
+      expectEvent(receipt, 'MintRejected', { nonce: nonce, requester: merchant, amount: amount, deposit: deposit, cid: '', timestamp: timestamp, requestHash: requestHash });
+    });
+
+    it('other accounts cannot reject a mint request', async function () {
+      const { logs } =await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await expectRevert(factory.rejectMintRequest(requestHash, { from: other }),'WFILFactory: caller is not a custodian');
+    });
+  });
 
 
   describe("addCustodian()", async () => {
