@@ -111,6 +111,8 @@ contract WFILFactory is AccessControl, Pausable {
         bytes32 inputRequestHash
     );
 
+    event TokenClaimed(IERC20 indexed token, uint256 amount);
+
     constructor(address wfil_, address owner_)
         public
     {
@@ -383,6 +385,7 @@ contract WFILFactory is AccessControl, Pausable {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         uint256 balance = token.balanceOf(address(this));
         token.safeTransfer(_owner, balance);
+        emit TokenClaimed(token, balance);
     }
 
 
