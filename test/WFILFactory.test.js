@@ -277,6 +277,48 @@ const cid = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
   });
 
+  describe('confirmBurnRequest()', function () {
+    beforeEach(async function () {
+      await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+      await factory.setMerchantDeposit(deposit, { from: merchant });
+    });
+
+    it('merchant can confirm a burn request', async function () {
+      const { logs } = await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await factory.confirmMintRequest(requestHash, cid, { from: custodian });
+      await wfil.increaseAllowance(factory.address, amount, { from: merchant });
+      const burn = await factory.burn(amount, { from: merchant });
+      const burnHash = burn.logs[0].args.requestHash;
+      await factory.confirmBurnRequest(burnHash, cid, { from: merchant });
+      const receipt = await factory.getBurnRequest(nonce, {from: other});
+      expect(receipt.status).to.equal('approved');
+    });
+
+    it('should emit the appropriate event when a merchant confirm a burn request', async () => {
+      const { logs } = await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await factory.confirmMintRequest(requestHash, cid, {from: custodian});
+      await wfil.increaseAllowance(factory.address, amount, { from: merchant });
+      const burn = await factory.burn(amount, { from: merchant });
+      const timestamp = burn.logs[0].args.timestamp;
+      const burnHash = burn.logs[0].args.requestHash;
+      const receipt = await factory.confirmBurnRequest(burnHash, cid, { from: merchant });
+      expectEvent(receipt, 'BurnConfirmed', { nonce: nonce, requester: merchant, amount: amount, deposit: deposit, cid: cid, timestamp: timestamp, inputRequestHash: burnHash });
+    });
+
+    it('other accounts cannot confirm a burn request', async function () {
+      const { logs } = await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await factory.confirmMintRequest(requestHash, cid, { from: custodian });
+      await wfil.increaseAllowance(factory.address, amount, { from: merchant });
+      const burn = await factory.burn(amount, { from: merchant });
+      const burnHash = burn.logs[0].args.requestHash;
+      await expectRevert(factory.confirmBurnRequest(burnHash, cid, { from: other }),'WFILFactory: caller is not a merchant');
+    });
+  });
+
+
   describe("addCustodian()", async () => {
       it("default admin should be able to add a new custodian", async () => {
         await factory.addCustodian(custodian2, {from:owner});
