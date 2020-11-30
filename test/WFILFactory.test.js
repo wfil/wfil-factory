@@ -16,7 +16,7 @@ let wfil;
 let factory;
 
 describe('WFILFactory', function () {
-const [ deployer, dao, owner, newOwner, merchant, merchant2, custodian, custodian2, other ] = accounts;
+const [ deployer, dao, owner, newOwner, merchant, merchant2, custodian, custodian2, minter, other ] = accounts;
 
 
 const amount = ether('10');
@@ -290,7 +290,7 @@ const cid = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
       const burn = await factory.burn(amount, { from: merchant });
       const burnHash = burn.logs[0].args.requestHash;
-      await factory.confirmBurnRequest(burnHash, cid, { from: merchant });
+      await factory.confirmBurnRequest(burnHash, cid, { from: custodian });
       const receipt = await factory.getBurnRequest(nonce, {from: other});
       expect(receipt.status).to.equal('approved');
     });
@@ -303,7 +303,7 @@ const cid = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       const burn = await factory.burn(amount, { from: merchant });
       const timestamp = burn.logs[0].args.timestamp;
       const burnHash = burn.logs[0].args.requestHash;
-      const receipt = await factory.confirmBurnRequest(burnHash, cid, { from: merchant });
+      const receipt = await factory.confirmBurnRequest(burnHash, cid, { from: custodian });
       expectEvent(receipt, 'BurnConfirmed', { nonce: nonce, requester: merchant, amount: amount, deposit: deposit, cid: cid, timestamp: timestamp, inputRequestHash: burnHash });
     });
 
@@ -314,10 +314,30 @@ const cid = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
       const burn = await factory.burn(amount, { from: merchant });
       const burnHash = burn.logs[0].args.requestHash;
-      await expectRevert(factory.confirmBurnRequest(burnHash, cid, { from: other }),'WFILFactory: caller is not a merchant');
+      await expectRevert(factory.confirmBurnRequest(burnHash, cid, { from: other }),'WFILFactory: caller is not a custodian');
     });
   });
 
+  describe('reclaimToken()', function () {
+    beforeEach(async function () {
+      await wfil.addMinter(minter, { from: dao });
+      await wfil.wrap(factory.address, amount, { from: minter });
+    });
+
+    it('owner can reclaim erc20 tokens sent to factory contract', async function () {
+      await factory.reclaimToken(wfil.address, { from: owner });
+      expect(await wfil.balanceOf(factory.address)).to.be.bignumber.equal('0');
+    });
+
+    it("should emit the appropriate event when an erc20 token is claimed", async () => {
+      const receipt = await factory.reclaimToken(wfil.address, {from:owner});
+      expectEvent(receipt, "TokenClaimed", { token: wfil.address, amount: amount });
+    });
+
+    it('other accounts cannot reclaim erc20 tokens', async function () {
+      await expectRevert(factory.reclaimToken(wfil.address, { from: other }),'WFILFactory: caller is not the default admin');
+    });
+  });
 
   describe("addCustodian()", async () => {
       it("default admin should be able to add a new custodian", async () => {
