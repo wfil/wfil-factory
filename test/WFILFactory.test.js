@@ -149,9 +149,36 @@ const deposit = 't3q32q2hmq63tpgejlsuubkqjpfqhv75vu2ieg2jhyqhob7dikuftf4mjhobueu
     it('other accounts cannot add a mint request', async function () {
       await expectRevert(factory.addMintRequest(amount, deposit, { from: other }),'WFILFactory: caller is not a merchant');
     });
-
   });
-  
+
+  describe('cancelMintRequest()', function () {
+    beforeEach(async function () {
+      await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+    });
+
+    it('merchant can cancel a mint request', async function () {
+      const { logs } =await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await factory.cancelMintRequest(requestHash, { from: merchant });
+      const receipt = await factory.getMintRequest(nonce, {from: other});
+      expect(receipt.status).to.equal('canceled');
+    });
+
+    it('should emit the appropriate event when a merchant cancel a mint request', async () => {
+      const { logs } =await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      const receipt = await factory.cancelMintRequest(requestHash, {from: merchant});
+      expectEvent(receipt, 'MintRequestCancel', { nonce: nonce, requester: merchant, requestHash: requestHash });
+    });
+
+    it('other accounts cannot cancel a mint request', async function () {
+      const { logs } =await factory.addMintRequest(amount, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await expectRevert(factory.cancelMintRequest(requestHash, { from: other }),'WFILFactory: caller is not a merchant');
+    });
+  });
+
+
   describe("addCustodian()", async () => {
       it("default admin should be able to add a new custodian", async () => {
         await factory.addCustodian(custodian2, {from:owner});
