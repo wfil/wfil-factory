@@ -207,10 +207,8 @@ contract WFILFactory is AccessControl, Pausable {
 
     function cancelMintRequest(bytes32 requestHash) external returns (bool) {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
-        uint256 nonce;
-        Request memory request;
 
-        (nonce, request) = _getPendingMintRequest(requestHash);
+        (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
 
         require(msg.sender == request.requester, "WFILFactory: cancel caller is different than pending request initiator");
         mints[nonce].status = RequestStatus.CANCELED;
@@ -221,10 +219,8 @@ contract WFILFactory is AccessControl, Pausable {
 
     function confirmMintRequest(bytes32 requestHash, string calldata cid) external returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
-        uint nonce;
-        Request memory request;
 
-        (nonce, request) = _getPendingMintRequest(requestHash);
+        (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
 
         mints[nonce].cid = cid;
         mints[nonce].status = RequestStatus.APPROVED;
@@ -246,10 +242,8 @@ contract WFILFactory is AccessControl, Pausable {
 
     function rejectMintRequest(bytes32 requestHash) external returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
-        uint nonce;
-        Request memory request;
 
-        (nonce, request) = _getPendingMintRequest(requestHash);
+        (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
 
         mints[nonce].status = RequestStatus.REJECTED;
 
