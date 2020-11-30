@@ -177,7 +177,7 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
-    function addMintRequest(uint256 amount, string calldata deposit)
+    function addMintRequest(uint256 amount, string calldata txId, string calldata deposit)
         external
         returns (bool)
     {
@@ -187,9 +187,6 @@ contract WFILFactory is AccessControl, Pausable {
 
         uint256 nonce = _mintsIdTracker.current();
         uint256 timestamp = _timestamp();
-
-        // set txId as empty since it is not known yet.
-        string memory txId = "";
 
         mints[nonce].requester = msg.sender;
         mints[nonce].amount = amount;
@@ -219,12 +216,11 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
-    function confirmMintRequest(bytes32 requestHash, string calldata txId) external returns (bool) {
+    function confirmMintRequest(bytes32 requestHash) external returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
 
         (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
 
-        mints[nonce].txId = txId;
         mints[nonce].status = RequestStatus.APPROVED;
 
         emit MintConfirmed(
@@ -232,7 +228,7 @@ contract WFILFactory is AccessControl, Pausable {
             request.requester,
             request.amount,
             request.deposit,
-            txId,
+            request.txId,
             request.timestamp,
             requestHash
         );
