@@ -291,7 +291,7 @@ contract WFILFactory is AccessControl, Pausable {
     }
 
     function confirmBurnRequest(bytes32 requestHash, string calldata cid) external returns (bool) {
-        require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
+        require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         uint256 nonce;
         Request memory request;
 
