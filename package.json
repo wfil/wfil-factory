@@ -24,7 +24,8 @@
     "@truffle/hdwallet-provider": "^1.2.0",
     "ganache-cli": "^6.12.1",
     "solhint": "^3.3.2",
-    "truffle": "^5.1.54"
+    "truffle": "^5.1.54",
+    "truffle-plugin-verify": "^0.5.2"
   },
   "devDependencies": {
     "@openzeppelin/test-environment": "^0.1.8",
