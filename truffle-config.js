@@ -34,6 +34,14 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
+   
+  plugins: [
+    'truffle-plugin-verify'
+  ],
+
+  api_keys: {
+    etherscan: ''
+  },
 
   networks: {
     // Useful for testing. The `development` name is special - truffle uses it by default
