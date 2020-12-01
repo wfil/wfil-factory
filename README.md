@@ -1,3 +1,3 @@
-# WFIL DAO
+# WFIL Factory
 
-![WFIL DAO Flow-Chart](WFIL_DAO.png)
+![WFIL Factory Flow-Chart](WFIL_DAO.png)
