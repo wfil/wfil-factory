@@ -34,9 +34,6 @@ contract WFILFactory is AccessControl, Pausable {
       RequestStatus status; // status of the request.
     }
 
-    /// @dev Contract Owner
-    address private _owner;
-
     WFILToken internal immutable wfil;
 
     Counters.Counter private _mintsIdTracker;
