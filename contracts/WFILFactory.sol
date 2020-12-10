@@ -135,7 +135,7 @@ contract WFILFactory is AccessControl, Pausable {
     {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         require(_merchant != address(0), "WFILFactory: invalid merchant address");
-        require(hasRole(MERCHANT_ROLE, _merchant), "WFILFactory: caller is not a merchant");
+        require(hasRole(MERCHANT_ROLE, _merchant), "WFILFactory: merchant address does not have merchant role")
         require(!_isEmpty(deposit), "WFILFactory: invalid asset deposit address");
 
         custodian[_merchant] = deposit;
