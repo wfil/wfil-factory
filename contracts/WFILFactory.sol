@@ -136,7 +136,7 @@ contract WFILFactory is AccessControl, Pausable {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         require(_merchant != address(0), "WFILFactory: invalid merchant address");
         require(hasRole(MERCHANT_ROLE, _merchant), "WFILFactory: caller is not a merchant");
-        require(!_isEmptyString(deposit), "WFILFactory: invalid asset deposit address");
+        require(!_isEmpty(deposit), "WFILFactory: invalid asset deposit address");
 
         custodian[_merchant] = deposit;
         emit CustodianDepositSet(_merchant, msg.sender, deposit);
@@ -153,7 +153,7 @@ contract WFILFactory is AccessControl, Pausable {
         returns (bool)
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
-        require(!_isEmptyString(deposit), "WFILFactory: invalid asset deposit address");
+        require(!_isEmpty(deposit), "WFILFactory: invalid asset deposit address");
 
         merchant[msg.sender] = deposit;
         emit MerchantDepositSet(msg.sender, deposit);
@@ -172,7 +172,7 @@ contract WFILFactory is AccessControl, Pausable {
         returns (bool)
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
-        require(!_isEmptyString(deposit), "WFILFactory: invalid filecoin deposit address");
+        require(!_isEmpty(deposit), "WFILFactory: invalid filecoin deposit address");
         require(_compareStrings(deposit, custodian[msg.sender]), "WFILFactory: wrong filecoin deposit address");
 
         uint256 nonce = _mintsIdTracker.current();
@@ -268,7 +268,7 @@ contract WFILFactory is AccessControl, Pausable {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
 
         string memory deposit = merchant[msg.sender];
-        require(!_isEmptyString(deposit), "WFILFactory: merchant filecoin deposit address was not set");
+        require(!_isEmpty(deposit), "WFILFactory: merchant filecoin deposit address was not set");
 
         uint256 nonce = _burnsIdTracker.current();
         uint256 timestamp = _timestamp();
@@ -478,8 +478,8 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev compare a string with ""
     /// @param a String A
     /// @return True if the string is empty
-    function _isEmptyString(string memory a) internal pure returns (bool) {
-       return _compareStrings(a, "");
+    function _isEmpty(string memory a) internal pure returns (bool) {
+       return bytes(a).length == 0;
     }
 
     /// @notice Return Current Block Timestamp
