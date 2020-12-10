@@ -541,6 +541,6 @@ contract WFILFactory is AccessControl, Pausable {
         else if (status == RequestStatus.CANCELED) return "canceled";
         else if (status == RequestStatus.APPROVED) return "approved";
         else if (status == RequestStatus.REJECTED) return "rejected";
-        else return "unknown";
+        else revert("WFILFactory: unknown status");
     }
 }
