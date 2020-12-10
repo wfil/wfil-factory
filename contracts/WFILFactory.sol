@@ -172,6 +172,8 @@ contract WFILFactory is AccessControl, Pausable {
         returns (bool)
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
+        require(amount > 0, "WFILFactory: amount is zero");
+        require(!_isEmpty(txId), "WFILFactory: invalid filecoin txId");
         require(!_isEmpty(deposit), "WFILFactory: invalid filecoin deposit address");
         require(_compareStrings(deposit, custodian[msg.sender]), "WFILFactory: wrong filecoin deposit address");
 
@@ -266,6 +268,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @return True if the the merchant successufully burn wfil
     function burn(uint256 amount) external whenNotPaused returns (bool) {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
+        require(amount > 0, "WFILFactory: amount is zero");
 
         string memory deposit = merchant[msg.sender];
         require(!_isEmpty(deposit), "WFILFactory: merchant filecoin deposit address was not set");
@@ -301,6 +304,8 @@ contract WFILFactory is AccessControl, Pausable {
     /// @return True if the the merchant burn reequest is successufully confirmed by the custodian
     function confirmBurnRequest(bytes32 requestHash, string calldata txId) external whenNotPaused returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
+        require(!_isEmpty(txId), "WFILFactory: invalid filecoin txId");
+
         uint256 nonce;
         Request memory request;
 
@@ -339,6 +344,7 @@ contract WFILFactory is AccessControl, Pausable {
             bytes32 requestHash
         )
     {
+        require(_mintsIdTracker.current() > nonce, "WFILFactory: invalid mint request nonce");
         Request memory request = mints[nonce];
         string memory statusString = _getStatusString(request.status);
 
@@ -375,6 +381,7 @@ contract WFILFactory is AccessControl, Pausable {
             bytes32 requestHash
         )
     {
+        require(_burnsIdTracker.current() > nonce, "WFILFactory: invalid burn request nonce");
         Request memory request = burns[nonce];
         string memory statusString = _getStatusString(request.status);
 
