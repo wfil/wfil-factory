@@ -16,7 +16,7 @@ let wfil;
 let factory;
 
 describe('WFILFactory', function () {
-const [ deployer, dao, owner, newOwner, merchant, merchant2, custodian, custodian2, minter, other ] = accounts;
+const [ deployer, dao, merchant, merchant2, custodian, custodian2, minter, other ] = accounts;
 
 
 const amount = ether('10');
@@ -34,21 +34,21 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
 
   beforeEach(async function () {
     wfil = await WFIL.new(dao, { from: deployer });
-    factory = await WFILFactory.new(wfil.address, owner, { from: deployer });
+    factory = await WFILFactory.new(wfil.address, dao, { from: deployer });
     await wfil.addMinter(factory.address, {from: dao});
-    await factory.addCustodian(custodian, {from: owner});
-    await factory.addMerchant(merchant, {from:owner});
+    await factory.addCustodian(custodian, {from: dao});
+    await factory.addMerchant(merchant, {from: dao});
   });
 
   describe('Setup', async function () {
-    it('owner has the default admin role', async function () {
+    it('dao has the default admin role', async function () {
       expect(await factory.getRoleMemberCount(DEFAULT_ADMIN_ROLE)).to.be.bignumber.equal('1');
-      expect(await factory.getRoleMember(DEFAULT_ADMIN_ROLE, 0)).to.equal(owner);
+      expect(await factory.getRoleMember(DEFAULT_ADMIN_ROLE, 0)).to.equal(dao);
     });
 
-    it('owner has the pauser role', async function () {
+    it('dao has the pauser role', async function () {
       expect(await factory.getRoleMemberCount(PAUSER_ROLE)).to.be.bignumber.equal('1');
-      expect(await factory.getRoleMember(PAUSER_ROLE, 0)).to.equal(owner);
+      expect(await factory.getRoleMember(PAUSER_ROLE, 0)).to.equal(dao);
     });
 
     it('pauser is the default admin', async function () {
@@ -60,27 +60,6 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
   describe('fallback()', async function () {
     it('should revert when sending ether to contract address', async function () {
         await expectRevert.unspecified(send.ether(other, factory.address, 1));
-    });
-  });
-
-  describe('setOwner()', function () {
-    it('default admin can set a new owner', async function () {
-      const receipt = await factory.setOwner(newOwner, { from: owner });
-      expect(await factory.getRoleMember(DEFAULT_ADMIN_ROLE, 0)).to.equal(newOwner);
-    });
-
-    it('should emit the appropriate event when newOwner is set', async () => {
-      const receipt = await factory.setOwner(newOwner, {from: owner});
-      expectEvent(receipt, 'OwnerChanged', { previousOwner: owner , newOwner: newOwner });
-      expectEvent(receipt, 'RoleGranted', { account: newOwner });
-    });
-
-    it("should revert when account is set to zero address", async () => {
-      await expectRevert(factory.setOwner(ZERO_ADDRESS, {from:owner}), 'WFILFactory: new owner is the zero address');
-    });
-
-    it('other accounts cannot set a new owner', async function () {
-      await expectRevert(factory.setOwner(newOwner, { from: other }),'WFILFactory: caller is not the default admin');
     });
   });
 
@@ -323,34 +302,34 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       await wfil.wrap(factory.address, amount, { from: minter });
     });
 
-    it('owner can reclaim erc20 tokens sent to factory contract', async function () {
-      await factory.reclaimToken(wfil.address, { from: owner });
+    it('dao can reclaim erc20 tokens sent to factory contract', async function () {
+      await factory.reclaimToken(wfil.address, other, { from: dao });
       expect(await wfil.balanceOf(factory.address)).to.be.bignumber.equal('0');
     });
 
     it("should emit the appropriate event when an erc20 token is claimed", async () => {
-      const receipt = await factory.reclaimToken(wfil.address, {from:owner});
-      expectEvent(receipt, "TokenClaimed", { token: wfil.address, amount: amount });
+      const receipt = await factory.reclaimToken(wfil.address, other, {from: dao});
+      expectEvent(receipt, "TokenClaimed", { token: wfil.address, recipient: other, amount: amount });
     });
 
     it('other accounts cannot reclaim erc20 tokens', async function () {
-      await expectRevert(factory.reclaimToken(wfil.address, { from: other }),'WFILFactory: caller is not the default admin');
+      await expectRevert(factory.reclaimToken(wfil.address, other, { from: other }),'WFILFactory: caller is not the default admin');
     });
   });
 
   describe("addCustodian()", async () => {
       it("default admin should be able to add a new custodian", async () => {
-        await factory.addCustodian(custodian2, {from:owner});
+        await factory.addCustodian(custodian2, {from: dao});
         expect(await factory.getRoleMember(CUSTODIAN_ROLE, 1)).to.equal(custodian2);
       });
 
       it("should emit the appropriate event when a new custodian is added", async () => {
-        const receipt = await factory.addCustodian(custodian2, {from:owner});
+        const receipt = await factory.addCustodian(custodian2, {from: dao});
         expectEvent(receipt, "RoleGranted", { account: custodian2 });
       });
 
       it("should revert when account is set to zero address", async () => {
-        await expectRevert(factory.addCustodian(ZERO_ADDRESS, {from:owner}), 'WFILFactory: account is the zero address');
+        await expectRevert(factory.addCustodian(ZERO_ADDRESS, {from: dao}), 'WFILFactory: account is the zero address');
       });
 
       it("other address should not be able to add a new custodian", async () => {
@@ -360,12 +339,12 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
 
   describe("removeCustodian()", async () => {
       it("default admin should be able to remove a custodian", async () => {
-        await factory.removeCustodian(custodian, {from:owner});
+        await factory.removeCustodian(custodian, {from: dao});
         expect(await factory.hasRole(CUSTODIAN_ROLE, custodian)).to.equal(false);
       });
 
       it("should emit the appropriate event when a custodian is removed", async () => {
-        const receipt = await factory.removeCustodian(custodian, {from:owner});
+        const receipt = await factory.removeCustodian(custodian, {from: dao});
         expectEvent(receipt, "RoleRevoked", { account: custodian });
       });
 
@@ -376,17 +355,17 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
 
   describe("addMerchant()", async () => {
       it("default admin should be able to add a new merchant", async () => {
-        await factory.addMerchant(merchant2, {from:owner});
+        await factory.addMerchant(merchant2, {from: dao});
         expect(await factory.getRoleMember(MERCHANT_ROLE, 1)).to.equal(merchant2);
       });
 
       it("should emit the appropriate event when a new merchant is added", async () => {
-        const receipt = await factory.addMerchant(merchant2, {from:owner});
+        const receipt = await factory.addMerchant(merchant2, {from: dao});
         expectEvent(receipt, "RoleGranted", { account: merchant2 });
       });
 
       it("should revert when account is set to zero address", async () => {
-        await expectRevert(factory.addMerchant(ZERO_ADDRESS, {from:owner}), 'WFILFactory: account is the zero address');
+        await expectRevert(factory.addMerchant(ZERO_ADDRESS, {from: dao}), 'WFILFactory: account is the zero address');
       });
 
       it("other address should not be able to add a new merchant", async () => {
@@ -396,12 +375,12 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
 
   describe("removeMerchant()", async () => {
       it("default admin should be able to remove a merchant", async () => {
-        await factory.removeMerchant(merchant, {from:owner});
+        await factory.removeMerchant(merchant, {from: dao});
         expect(await factory.hasRole(MERCHANT_ROLE, merchant)).to.equal(false);
       });
 
       it("should emit the appropriate event when a merchant is removed", async () => {
-        const receipt = await factory.removeMerchant(merchant, {from:owner});
+        const receipt = await factory.removeMerchant(merchant, {from: dao});
         expectEvent(receipt, "RoleRevoked", { account: merchant });
       });
 
