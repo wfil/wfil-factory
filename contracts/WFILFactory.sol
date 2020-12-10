@@ -153,6 +153,7 @@ contract WFILFactory is AccessControl, Pausable {
 
     function setCustodianDeposit(address _merchant, string calldata deposit)
       external
+      whenNotPaused
       returns (bool)
     {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
@@ -167,6 +168,7 @@ contract WFILFactory is AccessControl, Pausable {
 
     function setMerchantDeposit(string calldata deposit)
         external
+        whenNotPaused
         returns (bool)
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
@@ -179,6 +181,7 @@ contract WFILFactory is AccessControl, Pausable {
 
     function addMintRequest(uint256 amount, string calldata txId, string calldata deposit)
         external
+        whenNotPaused
         returns (bool)
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
@@ -204,7 +207,7 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
-    function cancelMintRequest(bytes32 requestHash) external returns (bool) {
+    function cancelMintRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
 
         (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
@@ -216,7 +219,7 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
-    function confirmMintRequest(bytes32 requestHash) external returns (bool) {
+    function confirmMintRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
 
         (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
@@ -238,7 +241,7 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
-    function rejectMintRequest(bytes32 requestHash) external returns (bool) {
+    function rejectMintRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
 
         (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
@@ -257,7 +260,7 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
-    function burn(uint256 amount) external returns (bool) {
+    function burn(uint256 amount) external whenNotPaused returns (bool) {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
 
         string memory deposit = merchant[msg.sender];
@@ -288,7 +291,7 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
-    function confirmBurnRequest(bytes32 requestHash, string calldata txId) external returns (bool) {
+    function confirmBurnRequest(bytes32 requestHash, string calldata txId) external whenNotPaused returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         uint256 nonce;
         Request memory request;
