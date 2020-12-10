@@ -60,48 +60,48 @@ contract WFILFactory is AccessControl, Pausable {
     event CustodianDepositSet(address indexed merchant, address indexed custodian, string deposit);
     event MerchantDepositSet(address indexed merchant, string deposit);
     event MintRequestAdd(
-        uint indexed nonce,
+        uint256 indexed nonce,
         address indexed requester,
-        uint amount,
+        uint256 amount,
         string deposit,
         string txId,
-        uint timestamp,
+        uint256 timestamp,
         bytes32 requestHash
     );
-    event MintRequestCancel(uint indexed nonce, address indexed requester, bytes32 requestHash);
+    event MintRequestCancel(uint256 indexed nonce, address indexed requester, bytes32 requestHash);
     event MintConfirmed(
-        uint indexed nonce,
+        uint256 indexed nonce,
         address indexed requester,
-        uint amount,
+        uint256 amount,
         string deposit,
         string txId,
-        uint timestamp,
+        uint256 timestamp,
         bytes32 requestHash
     );
     event MintRejected(
-        uint indexed nonce,
+        uint256 indexed nonce,
         address indexed requester,
-        uint amount,
+        uint256 amount,
         string deposit,
         string txId,
-        uint timestamp,
+        uint256 timestamp,
         bytes32 requestHash
     );
     event Burned(
-        uint indexed nonce,
+        uint256 indexed nonce,
         address indexed requester,
-        uint amount,
+        uint256 amount,
         string deposit,
-        uint timestamp,
+        uint256 timestamp,
         bytes32 requestHash
     );
     event BurnConfirmed(
-        uint indexed nonce,
+        uint256 indexed nonce,
         address indexed requester,
-        uint amount,
+        uint256 amount,
         string deposit,
         string txId,
-        uint timestamp,
+        uint256 timestamp,
         bytes32 inputRequestHash
     );
     event TokenClaimed(IERC20 indexed token, address indexed recipient, uint256 amount);
@@ -507,7 +507,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @notice Get Pending Mint Requests
     /// @param requestHash Hash of the merchant mint request metadata
     /// @return nonce request
-    function _getPendingMintRequest(bytes32 requestHash) internal view returns (uint nonce, Request memory request) {
+    function _getPendingMintRequest(bytes32 requestHash) internal view returns (uint256 nonce, Request memory request) {
         require(requestHash != 0, "WFILFactory: request hash is 0");
         nonce = mintNonce[requestHash];
         request = mints[nonce];
@@ -517,7 +517,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @notice Get Pending Burn Requests
     /// @param requestHash Hash of the merchant burn request metadata
     /// @return nonce request
-    function _getPendingBurnRequest(bytes32 requestHash) internal view returns (uint nonce, Request memory request) {
+    function _getPendingBurnRequest(bytes32 requestHash) internal view returns (uint256 nonce, Request memory request) {
         require(requestHash != 0, "WFILFactory: request hash is 0");
             nonce = burnNonce[requestHash];
             request = burns[nonce];
@@ -537,7 +537,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @notice Return Request Status String
     /// @dev decode enum into string
     /// @param status Request Status
-    /// @return request status string 
+    /// @return request status string
     function _getStatusString(RequestStatus status) internal pure returns (string memory) {
         if (status == RequestStatus.PENDING) return "pending";
         else if (status == RequestStatus.CANCELED) return "canceled";
@@ -545,5 +545,4 @@ contract WFILFactory is AccessControl, Pausable {
         else if (status == RequestStatus.REJECTED) return "rejected";
         else return "unknown";
     }
-
 }
