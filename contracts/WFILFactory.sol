@@ -395,6 +395,7 @@ contract WFILFactory is AccessControl, Pausable {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         require(account != address(0), "WFILFactory: account is the zero address");
         grantRole(CUSTODIAN_ROLE, account);
+        return true;
     }
 
     /// @notice Remove a Custodian
@@ -403,6 +404,7 @@ contract WFILFactory is AccessControl, Pausable {
     function removeCustodian(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         revokeRole(CUSTODIAN_ROLE, account);
+        return true;
     }
 
     /// @notice Add a new Merchant
@@ -412,6 +414,7 @@ contract WFILFactory is AccessControl, Pausable {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         require(account != address(0), "WFILFactory: account is the zero address");
         grantRole(MERCHANT_ROLE, account);
+        return true;
     }
 
     /// @notice Remove a Merchant
@@ -420,6 +423,7 @@ contract WFILFactory is AccessControl, Pausable {
     function removeMerchant(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         revokeRole(MERCHANT_ROLE, account);
+        return true;
     }
 
     /// @notice Pause all the functions
