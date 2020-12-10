@@ -375,7 +375,7 @@ contract WFILFactory is AccessControl, Pausable {
             bytes32 requestHash
         )
     {
-        Request storage request = burns[nonce];
+        Request memory request = burns[nonce];
         string memory statusString = _getStatusString(request.status);
 
         requestNonce = request.nonce;
