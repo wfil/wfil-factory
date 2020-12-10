@@ -363,8 +363,8 @@ contract WFILFactory is AccessControl, Pausable {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         require(recipient != address(0), "WFILFactory: recipient is the zero address");
         uint256 balance = token.balanceOf(address(this));
-        emit TokenClaimed(token, recipient, balance);
         token.safeTransfer(recipient, balance);
+        emit TokenClaimed(token, recipient, balance);
     }
 
 
