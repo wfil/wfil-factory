@@ -59,7 +59,6 @@ contract WFILFactory is AccessControl, Pausable {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     /// @dev Events
-    event OwnerChanged(address indexed previousOwner, address indexed newOwner);
     event CustodianDepositSet(address indexed merchant, address indexed custodian, string deposit);
     event MerchantDepositSet(address indexed merchant, string deposit);
     event MintRequestAdd(
@@ -111,18 +110,16 @@ contract WFILFactory is AccessControl, Pausable {
         bytes32 inputRequestHash
     );
 
-    event TokenClaimed(IERC20 indexed token, uint256 amount);
+    event TokenClaimed(IERC20 indexed token, address indexed recipient, uint256 amount);
 
-    constructor(address wfil_, address owner_)
+    constructor(address wfil_, address dao_)
         public
     {
         require(wfil_ != address(0), "WFILFactory: wfil token set to zero address");
-        require(owner_ != address(0), "WFILFactory: wfil token set to zero address");
+        require(dao_ != address(0), "WFILFactory: dao set to zero address");
 
-        _setupRole(DEFAULT_ADMIN_ROLE, owner_);
-        _setupRole(PAUSER_ROLE, owner_);
-
-        _owner = owner_;
+        _setupRole(DEFAULT_ADMIN_ROLE, dao_);
+        _setupRole(PAUSER_ROLE, dao_);
 
         wfil = WFILToken(wfil_);
 
@@ -132,23 +129,6 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Added not payable to revert transactions not matching any other function which send value
     fallback() external {
         revert("WFILFactory: function not matching any other");
-    }
-
-    /// @dev Returns the address of the contract owner
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-
-    /// @notice Change the owner address
-    /// @param newOwner The address of the new owner
-    function setOwner(address newOwner) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
-        require(newOwner != address(0), "WFILFactory: new owner is the zero address");
-        grantRole(DEFAULT_ADMIN_ROLE, newOwner);
-        renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        emit OwnerChanged(_owner, newOwner);
-        _owner = newOwner;
     }
 
     function setCustodianDeposit(address _merchant, string calldata deposit)
@@ -379,12 +359,15 @@ contract WFILFactory is AccessControl, Pausable {
 
     /// @notice Reclaim all ERC20 compatible tokens
     /// @dev Access restricted only for Default Admin
+    /// @dev `recipient` cannot be the zero address
     /// @param token IERC20 address of the token contract
-    function reclaimToken(IERC20 token) external {
+    /// @param recipient Recipient address
+    function reclaimToken(IERC20 token, address recipient) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
+        require(recipient != address(0), "WFILFactory: recipient is the zero address");
         uint256 balance = token.balanceOf(address(this));
-        token.safeTransfer(_owner, balance);
-        emit TokenClaimed(token, balance);
+        token.safeTransfer(recipient, balance);
+        emit TokenClaimed(token, recipient, balance);
     }
 
 
