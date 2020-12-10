@@ -20,6 +20,7 @@ interface WFILToken {
 contract WFILFactory is AccessControl, Pausable {
 
     /// @dev Libraries
+    using SafeERC20 for IERC20;
     using Counters for Counters.Counter;
 
     enum RequestStatus {PENDING, CANCELED, APPROVED, REJECTED}
@@ -47,9 +48,6 @@ contract WFILFactory is AccessControl, Pausable {
     mapping(bytes32 => uint256) public burnNonce;
     mapping(uint256 => Request) public mints;
     mapping(uint256 => Request) public burns;
-
-    /// @dev Library
-    using SafeERC20 for IERC20;
 
     /// @dev Roles
     bytes32 public constant CUSTODIAN_ROLE = keccak256("CUSTODIAN_ROLE");
