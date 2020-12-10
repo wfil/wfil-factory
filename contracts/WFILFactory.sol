@@ -36,14 +36,15 @@ contract WFILFactory is AccessControl, Pausable {
 
     WFILToken internal immutable wfil;
 
+    /// @dev Counters
     Counters.Counter private _mintsIdTracker;
     Counters.Counter private _burnsIdTracker;
 
+    /// @dev Storage
     mapping(address => string) public custodian;
     mapping(address => string) public merchant;
     mapping(bytes32 => uint256) public mintNonce;
     mapping(bytes32 => uint256) public burnNonce;
-
     mapping(uint256 => Request) public mints;
     mapping(uint256 => Request) public burns;
 
@@ -77,7 +78,6 @@ contract WFILFactory is AccessControl, Pausable {
         uint timestamp,
         bytes32 requestHash
     );
-
     event MintRejected(
         uint indexed nonce,
         address indexed requester,
@@ -87,7 +87,6 @@ contract WFILFactory is AccessControl, Pausable {
         uint timestamp,
         bytes32 requestHash
     );
-
     event Burned(
         uint indexed nonce,
         address indexed requester,
@@ -96,7 +95,6 @@ contract WFILFactory is AccessControl, Pausable {
         uint timestamp,
         bytes32 requestHash
     );
-
     event BurnConfirmed(
         uint indexed nonce,
         address indexed requester,
@@ -106,7 +104,6 @@ contract WFILFactory is AccessControl, Pausable {
         uint timestamp,
         bytes32 inputRequestHash
     );
-
     event TokenClaimed(IERC20 indexed token, address indexed recipient, uint256 amount);
 
     constructor(address wfil_, address dao_)
@@ -128,6 +125,11 @@ contract WFILFactory is AccessControl, Pausable {
         revert("WFILFactory: function not matching any other");
     }
 
+    /// @notice Set Custodian Deposit Address
+    /// @dev Access restricted only for Custodian
+    /// @param _merchant Merchant Address
+    /// @param deposit Custodian deposit address
+    /// @return True if deposit is set as custodian deposit address
     function setCustodianDeposit(address _merchant, string calldata deposit)
       external
       whenNotPaused
@@ -143,6 +145,10 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
+    /// @notice Set Merchant Deposit Address
+    /// @dev Access restricted only for Merchant
+    /// @param deposit Merchant deposit address
+    /// @return True if deposit is set as merchant deposit address
     function setMerchantDeposit(string calldata deposit)
         external
         whenNotPaused
@@ -156,6 +162,12 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
+    /// @notice Add Merchant WFIL Mint Request
+    /// @dev Access restricted only for Merchant
+    /// @param amount Ammount of WFIL to mint
+    /// @param txId Transaction Id of the FIL transaction
+    /// @param deposit Custodian deposit address to send FIL
+    /// @return True if the the merchant mint request if successufully added
     function addMintRequest(uint256 amount, string calldata txId, string calldata deposit)
         external
         whenNotPaused
@@ -184,6 +196,10 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
+    /// @notice Cancel Merchant WFIL Mint Request
+    /// @dev Access restricted only for Merchant
+    /// @param requestHash Hash of the merchant mint request metadata
+    /// @return True if the the merchant mint request if successufully canceled
     function cancelMintRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
 
@@ -196,6 +212,10 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
+    /// @notice Confirm Merchant WFIL Mint Request
+    /// @dev Access restricted only for Custodian
+    /// @param requestHash Hash of the merchant mint request metadata
+    /// @return True if the the merchant mint request if successufully confirmed by the custodian
     function confirmMintRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
 
@@ -218,6 +238,10 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
+    /// @notice Reject Merchant WFIL Mint Request
+    /// @dev Access restricted only for Custodian
+    /// @param requestHash Hash of the merchant mint request metadata
+    /// @return True if the the merchant mint request if successufully rejected by the custodian
     function rejectMintRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
 
@@ -237,6 +261,11 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
+    /// @notice Add Merchant WFIL Burn Request
+    /// @dev Access restricted only for Merchant
+    /// @dev Set txId as empty since it is not known yet.
+    /// @param amount Amount of WFIL to burn
+    /// @return True if the the merchant successufully burn wfil
     function burn(uint256 amount) external whenNotPaused returns (bool) {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
 
@@ -246,7 +275,6 @@ contract WFILFactory is AccessControl, Pausable {
         uint256 nonce = _burnsIdTracker.current();
         uint256 timestamp = _timestamp();
 
-        // set txId as empty since it is not known yet.
         string memory txId = "";
 
         burns[nonce].requester = msg.sender;
@@ -268,6 +296,11 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
+    /// @notice Confirm Merchant Burn Request
+    /// @dev Access restricted only for Custodian
+    /// @param requestHash Hash of the merchant burn request metadata
+    /// @param txId Transaction Id of the FIL transaction
+    /// @return True if the the merchant burn reequest is successufully confirmed by the custodian
     function confirmBurnRequest(bytes32 requestHash, string calldata txId) external whenNotPaused returns (bool) {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         uint256 nonce;
@@ -291,6 +324,9 @@ contract WFILFactory is AccessControl, Pausable {
         return true;
     }
 
+    /// @notice Mint Request Getter
+    /// @param nonce Mint Request Nonce
+    /// @return requestNonce requester amount deposit txId timestamp status requestHash
     function getMintRequest(uint256 nonce)
         external
         view
@@ -318,10 +354,15 @@ contract WFILFactory is AccessControl, Pausable {
         requestHash = _hash(request);
     }
 
+    /// @notice Mint Request Count Getter
+    /// @return count Current number of mint requests
     function getMintRequestsCount() external view returns (uint256 count) {
         return _mintsIdTracker.current();
     }
 
+    /// @notice Burn Request Getter
+    /// @param nonce Burn Request Nonce
+    /// @return requestNonce requester amount deposit txId timestamp status requestHash
     function getBurnRequest(uint256 nonce)
         external
         view
@@ -349,6 +390,8 @@ contract WFILFactory is AccessControl, Pausable {
         requestHash = _hash(request);
     }
 
+    /// @notice Burn Request Count Getter
+    /// @return count Current number of burn requests
     function getBurnRequestsCount() external view returns (uint256 count) {
         return _burnsIdTracker.current();
     }
@@ -371,6 +414,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @notice Add a new Custodian
     /// @dev Access restricted only for Default Admin
     /// @param account Address of the new Custodian
+    /// @return True if account is added as Custodian
     function addCustodian(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         require(account != address(0), "WFILFactory: account is the zero address");
@@ -381,6 +425,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @notice Remove a Custodian
     /// @dev Access restricted only for Default Admin
     /// @param account Address of the Custodian
+    /// @return True if account is removed as Custodian
     function removeCustodian(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         revokeRole(CUSTODIAN_ROLE, account);
@@ -390,6 +435,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @notice Add a new Merchant
     /// @dev Access restricted only for Default Admin
     /// @param account Address of the new Merchant
+    /// @return True if account is added as Merchant
     function addMerchant(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         require(account != address(0), "WFILFactory: account is the zero address");
@@ -400,6 +446,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @notice Remove a Merchant
     /// @dev Access restricted only for Default Admin
     /// @param account Address of the Merchant
+    /// @return True if account is removed as Merchant
     function removeMerchant(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         revokeRole(MERCHANT_ROLE, account);
@@ -420,55 +467,83 @@ contract WFILFactory is AccessControl, Pausable {
         _unpause();
     }
 
+    /// @notice Compare Strings
+    /// @dev compare the hash of two strings
+    /// @param a String A
+    /// @param b String B
+    /// @return True if the strings matches
     function _compareStrings(string memory a, string memory b) internal pure returns (bool) {
         return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
     }
 
+    /// @notice Check for Empty String
+    /// @dev compare a string with ""
+    /// @param a String A
+    /// @return True if the string is empty
     function _isEmptyString(string memory a) internal pure returns (bool) {
        return _compareStrings(a, "");
-   }
+    }
 
-   function _timestamp() internal view returns (uint256) {
-    // timestamp is only used for data maintaining purpose, it is not relied on for critical logic.
-    return block.timestamp;
-   }
+    /// @notice Return Current Block Timestamp
+    /// @dev block.timestamp is only used for data maintaining purpose, it is not relied on for critical logic
+    function _timestamp() internal view returns (uint256) {
+      return block.timestamp;
+    }
 
-  function _hash(Request memory request) internal pure returns (bytes32) {
-      return keccak256(abi.encode(
-          request.requester,
-          request.amount,
-          request.deposit,
-          request.txId,
-          request.nonce,
-          request.timestamp
-      ));
-  }
+    /// @notice Hash the Request Metadata
+    /// @param request Request
+    /// @return hash Hash of the request metadata
+    function _hash(Request memory request) internal pure returns (bytes32 hash) {
+        return keccak256(abi.encode(
+            request.requester,
+            request.amount,
+            request.deposit,
+            request.txId,
+            request.nonce,
+            request.timestamp
+        ));
+    }
 
-  function _getPendingMintRequest(bytes32 requestHash) internal view returns (uint nonce, Request memory request) {
-      require(requestHash != 0, "WFILFactory: request hash is 0");
-      nonce = mintNonce[requestHash];
-      request = mints[nonce];
-      _check(request, requestHash);
-  }
+    /// @notice Get Pending Mint Requests
+    /// @param requestHash Hash of the merchant mint request metadata
+    /// @return nonce request
+    function _getPendingMintRequest(bytes32 requestHash) internal view returns (uint nonce, Request memory request) {
+        require(requestHash != 0, "WFILFactory: request hash is 0");
+        nonce = mintNonce[requestHash];
+        request = mints[nonce];
+        _check(request, requestHash);
+    }
 
-  function _getPendingBurnRequest(bytes32 requestHash) internal view returns (uint nonce, Request memory request) {
-      require(requestHash != 0, "WFILFactory: request hash is 0");
-      nonce = burnNonce[requestHash];
-      request = burns[nonce];
-      _check(request, requestHash);
-  }
+    /// @notice Get Pending Burn Requests
+    /// @param requestHash Hash of the merchant burn request metadata
+    /// @return nonce request
+    function _getPendingBurnRequest(bytes32 requestHash) internal view returns (uint nonce, Request memory request) {
+        require(requestHash != 0, "WFILFactory: request hash is 0");
+            nonce = burnNonce[requestHash];
+            request = burns[nonce];
+            _check(request, requestHash);
+    }
 
-  function _check(Request memory request, bytes32 requestHash) internal pure {
-      require(request.status == RequestStatus.PENDING, "WFILFactory: request is not pending");
-      require(requestHash == _hash(request), "WFILFactory: given request hash does not match a pending request");
-  }
+    /// @notice Validate Pending Mint/Burn Requests
+    /// @dev Revert on not valid requests
+    /// @dev Hook used in _getPendingMintRequest and _getPendingBurnRequest
+    /// @param request Request
+    /// @param requestHash Hash of the merchant mint/burn request metadata
+    function _check(Request memory request, bytes32 requestHash) internal pure {
+        require(request.status == RequestStatus.PENDING, "WFILFactory: request is not pending");
+        require(requestHash == _hash(request), "WFILFactory: given request hash does not match a pending request");
+    }
 
-  function _getStatusString(RequestStatus status) internal pure returns (string memory) {
-      if (status == RequestStatus.PENDING) return "pending";
-      else if (status == RequestStatus.CANCELED) return "canceled";
-      else if (status == RequestStatus.APPROVED) return "approved";
-      else if (status == RequestStatus.REJECTED) return "rejected";
-      else return "unknown";
-  }
+    /// @notice Return Request Status String
+    /// @dev decode enum into string
+    /// @param status Request Status
+    /// @return request status string 
+    function _getStatusString(RequestStatus status) internal pure returns (string memory) {
+        if (status == RequestStatus.PENDING) return "pending";
+        else if (status == RequestStatus.CANCELED) return "canceled";
+        else if (status == RequestStatus.APPROVED) return "approved";
+        else if (status == RequestStatus.REJECTED) return "rejected";
+        else return "unknown";
+    }
 
 }
