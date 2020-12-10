@@ -138,6 +138,7 @@ contract WFILFactory is AccessControl, Pausable {
         require(_merchant != address(0), "WFILFactory: invalid merchant address");
         require(hasRole(MERCHANT_ROLE, _merchant), "WFILFactory: merchant address does not have merchant role");
         require(!_isEmpty(deposit), "WFILFactory: invalid asset deposit address");
+        require(!_compareStrings(deposit, custodian[_merchant]), "WFILFactory: custodian deposit address already set");
 
         custodian[_merchant] = deposit;
         emit CustodianDepositSet(_merchant, msg.sender, deposit);
@@ -155,6 +156,7 @@ contract WFILFactory is AccessControl, Pausable {
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         require(!_isEmpty(deposit), "WFILFactory: invalid asset deposit address");
+        require(!_compareStrings(deposit, merchant[msg.sender]), "WFILFactory: merchant deposit address already set");
 
         merchant[msg.sender] = deposit;
         emit MerchantDepositSet(msg.sender, deposit);
