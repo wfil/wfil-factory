@@ -296,6 +296,47 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
   });
 
+  describe('rejectBurnRequest()', function () {
+    beforeEach(async function () {
+      await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+      await factory.setMerchantDeposit(deposit, { from: merchant });
+    });
+
+    it('custodian can reject a burn request', async function () {
+      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await factory.confirmMintRequest(requestHash, { from: custodian });
+      await wfil.increaseAllowance(factory.address, amount, { from: merchant });
+      const burn = await factory.burn(amount, { from: merchant });
+      const burnHash = burn.logs[0].args.requestHash;
+      await factory.rejectBurnRequest(burnHash, { from: custodian });
+      const receipt = await factory.getBurnRequest(nonce, {from: other});
+      expect(receipt.status).to.equal('rejected');
+    });
+
+    it('should emit the appropriate event when a custodian reject a mint request', async () => {
+      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await factory.confirmMintRequest(requestHash, {from: custodian});
+      await wfil.increaseAllowance(factory.address, amount, { from: merchant });
+      const burn = await factory.burn(amount, { from: merchant });
+      const timestamp = burn.logs[0].args.timestamp;
+      const burnHash = burn.logs[0].args.requestHash;
+      const receipt = await factory.rejectBurnRequest(burnHash, { from: custodian });
+      expectEvent(receipt, 'BurnRejected', { nonce: nonce, requester: merchant, amount: amount, deposit: deposit, txId: '', timestamp: timestamp, inputRequestHash: burnHash });
+    });
+
+    it('other accounts cannot reject a mint request', async function () {
+      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const requestHash = logs[0].args.requestHash;
+      await factory.confirmMintRequest(requestHash, { from: custodian });
+      await wfil.increaseAllowance(factory.address, amount, { from: merchant });
+      const burn = await factory.burn(amount, { from: merchant });
+      const burnHash = burn.logs[0].args.requestHash;
+      await expectRevert(factory.rejectBurnRequest(burnHash, { from: other }),'WFILFactory: caller is not a custodian');
+    });
+  });
+
   describe('reclaimToken()', function () {
     beforeEach(async function () {
       await wfil.addMinter(minter, { from: dao });
