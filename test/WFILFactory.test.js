@@ -314,7 +314,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       expect(receipt.status).to.equal('rejected');
     });
 
-    it('should emit the appropriate event when a custodian reject a mint request', async () => {
+    it('should emit the appropriate event when a custodian reject a burn request', async () => {
       const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, {from: custodian});
@@ -326,7 +326,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       expectEvent(receipt, 'BurnRejected', { nonce: nonce, requester: merchant, amount: amount, deposit: deposit, txId: '', timestamp: timestamp, inputRequestHash: burnHash });
     });
 
-    it('other accounts cannot reject a mint request', async function () {
+    it('other accounts cannot reject a burn request', async function () {
       const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
