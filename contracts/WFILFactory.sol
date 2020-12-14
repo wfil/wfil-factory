@@ -432,6 +432,7 @@ contract WFILFactory is AccessControl, Pausable {
     function addCustodian(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         require(account != address(0), "WFILFactory: account is the zero address");
+        require(!hasRole(CUSTODIAN_ROLE, account), "WFILFactory: account is already a custodian");
         grantRole(CUSTODIAN_ROLE, account);
         return true;
     }
@@ -442,6 +443,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @return True if account is removed as Custodian
     function removeCustodian(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
+        require(hasRole(CUSTODIAN_ROLE, account), "WFILFactory: account is not a custodian");
         revokeRole(CUSTODIAN_ROLE, account);
         return true;
     }
@@ -453,6 +455,7 @@ contract WFILFactory is AccessControl, Pausable {
     function addMerchant(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
         require(account != address(0), "WFILFactory: account is the zero address");
+        require(!hasRole(MERCHANT_ROLE, account), "WFILFactory: account is already a merchant");
         grantRole(MERCHANT_ROLE, account);
         return true;
     }
@@ -463,6 +466,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @return True if account is removed as Merchant
     function removeMerchant(address account) external returns (bool) {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "WFILFactory: caller is not the default admin");
+        require(hasRole(MERCHANT_ROLE, account), "WFILFactory: account is not a merchant");
         revokeRole(MERCHANT_ROLE, account);
         return true;
     }
