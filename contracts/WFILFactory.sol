@@ -103,6 +103,15 @@ contract WFILFactory is AccessControl, Pausable {
         uint256 timestamp,
         bytes32 inputRequestHash
     );
+    event BurnRejected(
+        uint256 indexed nonce,
+        address indexed requester,
+        uint256 amount,
+        string deposit,
+        string txId,
+        uint256 timestamp,
+        bytes32 inputRequestHash
+    );
     event TokenClaimed(IERC20 indexed token, address indexed recipient, uint256 amount);
 
     constructor(address wfil_, address dao_)
@@ -309,10 +318,7 @@ contract WFILFactory is AccessControl, Pausable {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         require(!_isEmpty(txId), "WFILFactory: invalid filecoin txId");
 
-        uint256 nonce;
-        Request memory request;
-
-        (nonce, request) = _getPendingBurnRequest(requestHash);
+        (uint256 nonce, Request memory request) = _getPendingBurnRequest(requestHash);
 
         burns[nonce].txId = txId;
         burns[nonce].status = RequestStatus.APPROVED;
@@ -324,6 +330,29 @@ contract WFILFactory is AccessControl, Pausable {
             request.amount,
             request.deposit,
             txId,
+            request.timestamp,
+            requestHash
+        );
+        return true;
+    }
+
+    /// @notice Reject Merchant WFIL Burn Request
+    /// @dev Access restricted only for Custodian
+    /// @param requestHash Hash of the merchant burn request metadata
+    /// @return True if the the merchant burn request if successufully rejected by the custodian
+    function rejectBurnRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
+        require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
+
+        (uint256 nonce, Request memory request) = _getPendingBurnRequest(requestHash);
+
+        burns[nonce].status = RequestStatus.REJECTED;
+
+        emit BurnRejected(
+            request.nonce,
+            request.requester,
+            request.amount,
+            request.deposit,
+            request.txId,
             request.timestamp,
             requestHash
         );
