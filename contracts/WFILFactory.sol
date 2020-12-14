@@ -137,11 +137,9 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Access restricted only for Custodian
     /// @param _merchant Merchant Address
     /// @param deposit Custodian deposit address
-    /// @return True if deposit is set as custodian deposit address
     function setCustodianDeposit(address _merchant, string calldata deposit)
       external
       whenNotPaused
-      returns (bool)
     {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         require(_merchant != address(0), "WFILFactory: invalid merchant address");
@@ -151,17 +149,14 @@ contract WFILFactory is AccessControl, Pausable {
 
         custodian[_merchant] = deposit;
         emit CustodianDepositSet(_merchant, msg.sender, deposit);
-        return true;
     }
 
     /// @notice Set Merchant Deposit Address
     /// @dev Access restricted only for Merchant
     /// @param deposit Merchant deposit address
-    /// @return True if deposit is set as merchant deposit address
     function setMerchantDeposit(string calldata deposit)
         external
         whenNotPaused
-        returns (bool)
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         require(!_isEmpty(deposit), "WFILFactory: invalid asset deposit address");
@@ -169,7 +164,6 @@ contract WFILFactory is AccessControl, Pausable {
 
         merchant[msg.sender] = deposit;
         emit MerchantDepositSet(msg.sender, deposit);
-        return true;
     }
 
     /// @notice Add Merchant WFIL Mint Request
@@ -177,11 +171,9 @@ contract WFILFactory is AccessControl, Pausable {
     /// @param amount Ammount of WFIL to mint
     /// @param txId Transaction Id of the FIL transaction
     /// @param deposit Custodian deposit address to send FIL
-    /// @return True if the the merchant mint request if successufully added
     function addMintRequest(uint256 amount, string calldata txId, string calldata deposit)
         external
         whenNotPaused
-        returns (bool)
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         require(amount > 0, "WFILFactory: amount is zero");
@@ -205,14 +197,12 @@ contract WFILFactory is AccessControl, Pausable {
         _mintsIdTracker.increment();
 
         emit MintRequestAdd(nonce, msg.sender, amount, deposit, txId, timestamp, requestHash);
-        return true;
     }
 
     /// @notice Cancel Merchant WFIL Mint Request
     /// @dev Access restricted only for Merchant
     /// @param requestHash Hash of the merchant mint request metadata
-    /// @return True if the the merchant mint request if successufully canceled
-    function cancelMintRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
+    function cancelMintRequest(bytes32 requestHash) external whenNotPaused {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
 
         (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
@@ -221,14 +211,12 @@ contract WFILFactory is AccessControl, Pausable {
         mints[nonce].status = RequestStatus.CANCELED;
 
         emit MintRequestCancel(nonce, msg.sender, requestHash);
-        return true;
     }
 
     /// @notice Confirm Merchant WFIL Mint Request
     /// @dev Access restricted only for Custodian
     /// @param requestHash Hash of the merchant mint request metadata
-    /// @return True if the the merchant mint request if successufully confirmed by the custodian
-    function confirmMintRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
+    function confirmMintRequest(bytes32 requestHash) external whenNotPaused {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
 
         (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
@@ -246,15 +234,12 @@ contract WFILFactory is AccessControl, Pausable {
         );
 
         require(wfil.wrap(request.requester, request.amount), "WFILFactory: mint failed");
-
-        return true;
     }
 
     /// @notice Reject Merchant WFIL Mint Request
     /// @dev Access restricted only for Custodian
     /// @param requestHash Hash of the merchant mint request metadata
-    /// @return True if the the merchant mint request if successufully rejected by the custodian
-    function rejectMintRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
+    function rejectMintRequest(bytes32 requestHash) external whenNotPaused {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
 
         (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
@@ -270,15 +255,13 @@ contract WFILFactory is AccessControl, Pausable {
             request.timestamp,
             requestHash
         );
-        return true;
     }
 
     /// @notice Add Merchant WFIL Burn Request
     /// @dev Access restricted only for Merchant
     /// @dev Set txId as empty since it is not known yet.
     /// @param amount Amount of WFIL to burn
-    /// @return True if the the merchant successufully burn wfil
-    function burn(uint256 amount) external whenNotPaused returns (bool) {
+    function burn(uint256 amount) external whenNotPaused {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         require(amount > 0, "WFILFactory: amount is zero");
 
@@ -305,16 +288,13 @@ contract WFILFactory is AccessControl, Pausable {
         emit Burned(nonce, msg.sender, amount, deposit, timestamp, requestHash);
 
         require(wfil.unwrapFrom(msg.sender, amount), "WFILFactory: burn failed");
-
-        return true;
     }
 
     /// @notice Confirm Merchant Burn Request
     /// @dev Access restricted only for Custodian
     /// @param requestHash Hash of the merchant burn request metadata
     /// @param txId Transaction Id of the FIL transaction
-    /// @return True if the the merchant burn reequest is successufully confirmed by the custodian
-    function confirmBurnRequest(bytes32 requestHash, string calldata txId) external whenNotPaused returns (bool) {
+    function confirmBurnRequest(bytes32 requestHash, string calldata txId) external whenNotPaused {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
         require(!_isEmpty(txId), "WFILFactory: invalid filecoin txId");
 
@@ -333,14 +313,12 @@ contract WFILFactory is AccessControl, Pausable {
             request.timestamp,
             requestHash
         );
-        return true;
     }
 
     /// @notice Reject Merchant WFIL Burn Request
     /// @dev Access restricted only for Custodian
     /// @param requestHash Hash of the merchant burn request metadata
-    /// @return True if the the merchant burn request if successufully rejected by the custodian
-    function rejectBurnRequest(bytes32 requestHash) external whenNotPaused returns (bool) {
+    function rejectBurnRequest(bytes32 requestHash) external whenNotPaused {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
 
         (uint256 nonce, Request memory request) = _getPendingBurnRequest(requestHash);
@@ -356,7 +334,6 @@ contract WFILFactory is AccessControl, Pausable {
             request.timestamp,
             requestHash
         );
-        return true;
     }
 
     /// @notice Mint Request Getter
