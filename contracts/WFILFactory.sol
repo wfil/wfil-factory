@@ -28,6 +28,7 @@ contract WFILFactory is AccessControl, Pausable {
 
     struct Request {
       address requester; // sender of the request.
+      address custodian; // custodian associated to sender
       uint256 amount; // amount of fil to mint/burn.
       string deposit; // custodian's fil address in mint, merchant's fil address in burn.
       string txId; // filcoin txId for sending/redeeming fil in the mint/burn process.
@@ -43,8 +44,8 @@ contract WFILFactory is AccessControl, Pausable {
     Counters.Counter private _burnsIdTracker;
 
     /// @dev Storage
-    mapping(address => string) public custodian;
-    mapping(address => string) public merchant;
+    mapping(address => string) public custodianDeposit;
+    mapping(address => string) public merchantDeposit;
     mapping(bytes32 => uint256) public mintNonce;
     mapping(bytes32 => uint256) public burnNonce;
     mapping(uint256 => Request) public mints;
@@ -61,6 +62,7 @@ contract WFILFactory is AccessControl, Pausable {
     event MintRequestAdd(
         uint256 indexed nonce,
         address indexed requester,
+        address indexed custodian,
         uint256 amount,
         string deposit,
         string txId,
@@ -71,6 +73,7 @@ contract WFILFactory is AccessControl, Pausable {
     event MintConfirmed(
         uint256 indexed nonce,
         address indexed requester,
+        address indexed custodian,
         uint256 amount,
         string deposit,
         string txId,
@@ -80,6 +83,7 @@ contract WFILFactory is AccessControl, Pausable {
     event MintRejected(
         uint256 indexed nonce,
         address indexed requester,
+        address indexed custodian,
         uint256 amount,
         string deposit,
         string txId,
@@ -89,6 +93,7 @@ contract WFILFactory is AccessControl, Pausable {
     event Burned(
         uint256 indexed nonce,
         address indexed requester,
+        address indexed custodian,
         uint256 amount,
         string deposit,
         uint256 timestamp,
@@ -97,6 +102,7 @@ contract WFILFactory is AccessControl, Pausable {
     event BurnConfirmed(
         uint256 indexed nonce,
         address indexed requester,
+        address indexed custodian,
         uint256 amount,
         string deposit,
         string txId,
@@ -106,6 +112,7 @@ contract WFILFactory is AccessControl, Pausable {
     event BurnRejected(
         uint256 indexed nonce,
         address indexed requester,
+        address indexed custodian,
         uint256 amount,
         string deposit,
         string txId,
@@ -135,20 +142,20 @@ contract WFILFactory is AccessControl, Pausable {
 
     /// @notice Set Custodian Deposit Address
     /// @dev Access restricted only for Custodian
-    /// @param _merchant Merchant Address
+    /// @param merchant Merchant Address
     /// @param deposit Custodian deposit address
-    function setCustodianDeposit(address _merchant, string calldata deposit)
+    function setCustodianDeposit(address merchant, string calldata deposit)
       external
       whenNotPaused
     {
         require(hasRole(CUSTODIAN_ROLE, msg.sender), "WFILFactory: caller is not a custodian");
-        require(_merchant != address(0), "WFILFactory: invalid merchant address");
-        require(hasRole(MERCHANT_ROLE, _merchant), "WFILFactory: merchant address does not have merchant role");
+        require(merchant != address(0), "WFILFactory: invalid merchant address");
+        require(hasRole(MERCHANT_ROLE, merchant), "WFILFactory: merchant address does not have merchant role");
         require(!_isEmpty(deposit), "WFILFactory: invalid asset deposit address");
-        require(!_compareStrings(deposit, custodian[_merchant]), "WFILFactory: custodian deposit address already set");
+        require(!_compareStrings(deposit, custodianDeposit[merchant]), "WFILFactory: custodian deposit address already set");
 
-        custodian[_merchant] = deposit;
-        emit CustodianDepositSet(_merchant, msg.sender, deposit);
+        custodianDeposit[merchant] = deposit;
+        emit CustodianDepositSet(merchant, msg.sender, deposit);
     }
 
     /// @notice Set Merchant Deposit Address
@@ -160,9 +167,9 @@ contract WFILFactory is AccessControl, Pausable {
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         require(!_isEmpty(deposit), "WFILFactory: invalid asset deposit address");
-        require(!_compareStrings(deposit, merchant[msg.sender]), "WFILFactory: merchant deposit address already set");
+        require(!_compareStrings(deposit, merchantDeposit[msg.sender]), "WFILFactory: merchant deposit address already set");
 
-        merchant[msg.sender] = deposit;
+        merchantDeposit[msg.sender] = deposit;
         emit MerchantDepositSet(msg.sender, deposit);
     }
 
@@ -170,21 +177,24 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Access restricted only for Merchant
     /// @param amount Ammount of WFIL to mint
     /// @param txId Transaction Id of the FIL transaction
-    function addMintRequest(uint256 amount, string calldata txId)
+    /// @param custodian Custodian address
+    function addMintRequest(uint256 amount, string calldata txId, address custodian)
         external
         whenNotPaused
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         require(amount > 0, "WFILFactory: amount is zero");
         require(!_isEmpty(txId), "WFILFactory: invalid filecoin txId");
+        require(hasRole(CUSTODIAN_ROLE, custodian), "WFILFactory: custodian has not the custodian role");
 
-        string memory deposit = custodian[msg.sender];
+        string memory deposit = custodianDeposit[msg.sender];
         require(!_isEmpty(deposit), "WFILFactory: custodian filecoin deposit address was not set");
 
         uint256 nonce = _mintsIdTracker.current();
         uint256 timestamp = _timestamp();
 
         mints[nonce].requester = msg.sender;
+        mints[nonce].custodian = custodian;
         mints[nonce].amount = amount;
         mints[nonce].deposit = deposit;
         mints[nonce].txId = txId;
@@ -196,7 +206,7 @@ contract WFILFactory is AccessControl, Pausable {
         mintNonce[requestHash] = nonce;
         _mintsIdTracker.increment();
 
-        emit MintRequestAdd(nonce, msg.sender, amount, deposit, txId, timestamp, requestHash);
+        emit MintRequestAdd(nonce, msg.sender, custodian, amount, deposit, txId, timestamp, requestHash);
     }
 
     /// @notice Cancel Merchant WFIL Mint Request
@@ -221,11 +231,14 @@ contract WFILFactory is AccessControl, Pausable {
 
         (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
 
+        require(msg.sender == request.custodian, "WFILFactory: confirm caller is different than pending request custodian");
+
         mints[nonce].status = RequestStatus.APPROVED;
 
         emit MintConfirmed(
             request.nonce,
             request.requester,
+            request.custodian,
             request.amount,
             request.deposit,
             request.txId,
@@ -244,11 +257,14 @@ contract WFILFactory is AccessControl, Pausable {
 
         (uint256 nonce, Request memory request) = _getPendingMintRequest(requestHash);
 
+        require(msg.sender == request.custodian, "WFILFactory: reject caller is different than pending request custodian");
+
         mints[nonce].status = RequestStatus.REJECTED;
 
         emit MintRejected(
             request.nonce,
             request.requester,
+            request.custodian,
             request.amount,
             request.deposit,
             request.txId,
@@ -261,11 +277,13 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Access restricted only for Merchant
     /// @dev Set txId as empty since it is not known yet.
     /// @param amount Amount of WFIL to burn
-    function burn(uint256 amount) external whenNotPaused {
+    /// @param custodian Custodian Address
+    function burn(uint256 amount, address custodian) external whenNotPaused {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         require(amount > 0, "WFILFactory: amount is zero");
+        require(hasRole(CUSTODIAN_ROLE, custodian), "WFILFactory: custodian has not the custodian role");
 
-        string memory deposit = merchant[msg.sender];
+        string memory deposit = merchantDeposit[msg.sender];
         require(!_isEmpty(deposit), "WFILFactory: merchant filecoin deposit address was not set");
 
         uint256 nonce = _burnsIdTracker.current();
@@ -274,6 +292,7 @@ contract WFILFactory is AccessControl, Pausable {
         string memory txId = "";
 
         burns[nonce].requester = msg.sender;
+        burns[nonce].custodian = custodian;
         burns[nonce].amount = amount;
         burns[nonce].deposit = deposit;
         burns[nonce].txId = txId;
@@ -285,7 +304,7 @@ contract WFILFactory is AccessControl, Pausable {
         burnNonce[requestHash] = nonce;
         _burnsIdTracker.increment();
 
-        emit Burned(nonce, msg.sender, amount, deposit, timestamp, requestHash);
+        emit Burned(nonce, msg.sender, custodian, amount, deposit, timestamp, requestHash);
 
         require(wfil.unwrapFrom(msg.sender, amount), "WFILFactory: burn failed");
     }
@@ -300,6 +319,8 @@ contract WFILFactory is AccessControl, Pausable {
 
         (uint256 nonce, Request memory request) = _getPendingBurnRequest(requestHash);
 
+        require(msg.sender == request.custodian, "WFILFactory: confirm caller is different than pending request custodian");
+
         burns[nonce].txId = txId;
         burns[nonce].status = RequestStatus.APPROVED;
         burnNonce[_hash(burns[nonce])] = nonce;
@@ -307,6 +328,7 @@ contract WFILFactory is AccessControl, Pausable {
         emit BurnConfirmed(
             request.nonce,
             request.requester,
+            request.custodian,
             request.amount,
             request.deposit,
             txId,
@@ -323,11 +345,14 @@ contract WFILFactory is AccessControl, Pausable {
 
         (uint256 nonce, Request memory request) = _getPendingBurnRequest(requestHash);
 
+        require(msg.sender == request.custodian, "WFILFactory: reject caller is different than pending request custodian");
+
         burns[nonce].status = RequestStatus.REJECTED;
 
         emit BurnRejected(
             request.nonce,
             request.requester,
+            request.custodian,
             request.amount,
             request.deposit,
             request.txId,
@@ -345,6 +370,7 @@ contract WFILFactory is AccessControl, Pausable {
         returns (
             uint256 requestNonce,
             address requester,
+            address custodian,
             uint256 amount,
             string memory deposit,
             string memory txId,
@@ -359,6 +385,7 @@ contract WFILFactory is AccessControl, Pausable {
 
         requestNonce = request.nonce;
         requester = request.requester;
+        custodian = request.custodian;
         amount = request.amount;
         deposit = request.deposit;
         txId = request.txId;
@@ -382,6 +409,7 @@ contract WFILFactory is AccessControl, Pausable {
         returns (
             uint256 requestNonce,
             address requester,
+            address custodian,
             uint256 amount,
             string memory deposit,
             string memory txId,
@@ -396,6 +424,7 @@ contract WFILFactory is AccessControl, Pausable {
 
         requestNonce = request.nonce;
         requester = request.requester;
+        custodian = request.custodian;
         amount = request.amount;
         deposit = request.deposit;
         txId = request.txId;
@@ -514,6 +543,7 @@ contract WFILFactory is AccessControl, Pausable {
     function _hash(Request memory request) internal pure returns (bytes32 hash) {
         return keccak256(abi.encode(
             request.requester,
+            request.custodian,
             request.amount,
             request.deposit,
             request.txId,
