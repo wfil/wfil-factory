@@ -106,7 +106,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('merchant can add a mint request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const timestamp = await time.latest();
       const requestHash = logs[0].args.requestHash;
       const receipt = await factory.getMintRequest(nonce, {from: other});
@@ -121,13 +121,13 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('should emit the appropriate event when a merchant add a mint request', async () => {
-      const receipt = await factory.addMintRequest(amount, txId, deposit, {from: merchant});
+      const receipt = await factory.addMintRequest(amount, txId, {from: merchant});
       const timestamp = await time.latest();
       expectEvent(receipt, 'MintRequestAdd', { nonce: nonce, requester: merchant, amount: amount, deposit: deposit, txId: txId, timestamp: timestamp });
     });
 
     it('other accounts cannot add a mint request', async function () {
-      await expectRevert(factory.addMintRequest(amount, txId, deposit, { from: other }),'WFILFactory: caller is not a merchant');
+      await expectRevert(factory.addMintRequest(amount, txId, { from: other }),'WFILFactory: caller is not a merchant');
     });
   });
 
@@ -137,7 +137,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('merchant can cancel a mint request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.cancelMintRequest(requestHash, { from: merchant });
       const receipt = await factory.getMintRequest(nonce, {from: other});
@@ -145,14 +145,14 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('should emit the appropriate event when a merchant cancel a mint request', async () => {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       const receipt = await factory.cancelMintRequest(requestHash, {from: merchant});
       expectEvent(receipt, 'MintRequestCancel', { nonce: nonce, requester: merchant, requestHash: requestHash });
     });
 
     it('other accounts cannot cancel a mint request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await expectRevert(factory.cancelMintRequest(requestHash, { from: other }),'WFILFactory: caller is not a merchant');
     });
@@ -164,7 +164,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('custodian can confirm a mint request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       const receipt = await factory.getMintRequest(nonce, {from: other});
@@ -172,7 +172,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('should emit the appropriate event when a custodian confirm a mint request', async () => {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       const timestamp = logs[0].args.timestamp;
       const receipt = await factory.confirmMintRequest(requestHash, {from: custodian});
@@ -180,7 +180,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('other accounts cannot confirm a mint request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await expectRevert(factory.confirmMintRequest(requestHash, { from: other }),'WFILFactory: caller is not a custodian');
     });
@@ -192,7 +192,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('custodian can reject a mint request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.rejectMintRequest(requestHash, { from: custodian });
       const receipt = await factory.getMintRequest(nonce, {from: other});
@@ -200,7 +200,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('should emit the appropriate event when a custodian reject a mint request', async () => {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       const timestamp = logs[0].args.timestamp;
       const receipt = await factory.rejectMintRequest(requestHash, {from: custodian});
@@ -208,7 +208,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('other accounts cannot reject a mint request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await expectRevert(factory.rejectMintRequest(requestHash, { from: other }),'WFILFactory: caller is not a custodian');
     });
@@ -221,7 +221,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('merchant can burn wrapped filecoin', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
 
@@ -236,7 +236,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('should emit the appropriate event when a merchant burn wrapped filecoin', async () => {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, {from: custodian});
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
@@ -247,7 +247,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('other accounts cannot burn wrapped filecoin', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
@@ -262,7 +262,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('merchant can confirm a burn request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
@@ -274,7 +274,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('should emit the appropriate event when a merchant confirm a burn request', async () => {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, {from: custodian});
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
@@ -286,7 +286,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('other accounts cannot confirm a burn request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
@@ -303,7 +303,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('custodian can reject a burn request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
@@ -315,7 +315,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('should emit the appropriate event when a custodian reject a burn request', async () => {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, {from: custodian});
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
@@ -327,7 +327,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
 
     it('other accounts cannot reject a burn request', async function () {
-      const { logs } = await factory.addMintRequest(amount, txId, deposit, { from: merchant });
+      const { logs } = await factory.addMintRequest(amount, txId, { from: merchant });
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
