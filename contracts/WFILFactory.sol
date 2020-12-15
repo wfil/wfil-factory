@@ -170,16 +170,16 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Access restricted only for Merchant
     /// @param amount Ammount of WFIL to mint
     /// @param txId Transaction Id of the FIL transaction
-    /// @param deposit Custodian deposit address to send FIL
-    function addMintRequest(uint256 amount, string calldata txId, string calldata deposit)
+    function addMintRequest(uint256 amount, string calldata txId)
         external
         whenNotPaused
     {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         require(amount > 0, "WFILFactory: amount is zero");
         require(!_isEmpty(txId), "WFILFactory: invalid filecoin txId");
-        require(!_isEmpty(deposit), "WFILFactory: invalid filecoin deposit address");
-        require(_compareStrings(deposit, custodian[msg.sender]), "WFILFactory: wrong filecoin deposit address");
+
+        string memory deposit = custodian[msg.sender];
+        require(!_isEmpty(deposit), "WFILFactory: custodian filecoin deposit address was not set");
 
         uint256 nonce = _mintsIdTracker.current();
         uint256 timestamp = _timestamp();
