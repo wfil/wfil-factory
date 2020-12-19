@@ -359,6 +359,8 @@ contract WFILFactory is AccessControl, Pausable {
             request.timestamp,
             requestHash
         );
+
+        require(wfil.wrap(request.requester, request.amount), "WFILFactory: mint failed");
     }
 
     /// @notice Mint Request Getter
