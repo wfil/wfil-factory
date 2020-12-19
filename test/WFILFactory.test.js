@@ -78,6 +78,11 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       await expectRevert(factory.setCustodianDeposit(ZERO_ADDRESS, deposit, {from:custodian}), 'WFILFactory: invalid merchant address');
     });
 
+    it('should revert when the custodian deposit address is already set', async () => {
+      await factory.setCustodianDeposit(merchant, deposit, {from: custodian});
+      await expectRevert(factory.setCustodianDeposit(merchant, deposit, { from: custodian }),'WFILFactory: custodian deposit address already set');
+    });
+
     it('other accounts cannot set a new custodian deposit address', async function () {
       await expectRevert(factory.setCustodianDeposit(merchant, deposit, { from: other }),'WFILFactory: caller is not a custodian');
     });
@@ -92,6 +97,11 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     it('should emit the appropriate event when new merchant deposit address is set', async () => {
       const receipt = await factory.setMerchantDeposit(deposit, {from: merchant});
       expectEvent(receipt, 'MerchantDepositSet', { merchant: merchant, deposit: deposit });
+    });
+
+    it('should revert when the merchant deposit address is already set', async () => {
+      await factory.setMerchantDeposit(deposit, {from: merchant});
+      await expectRevert(factory.setMerchantDeposit(deposit, { from: merchant }),'WFILFactory: merchant deposit address already set');
     });
 
     it('other accounts cannot set a new merchant deposit address', async function () {
