@@ -309,8 +309,10 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
       const burn = await factory.burn(amount, custodian, { from: merchant });
+      expect(await wfil.balanceOf(merchant)).to.be.bignumber.equal('0');
       const burnHash = burn.logs[0].args.requestHash;
       await factory.rejectBurnRequest(burnHash, { from: custodian });
+      expect(await wfil.balanceOf(merchant)).to.be.bignumber.equal(amount);
       const receipt = await factory.getBurnRequest(nonce, {from: other});
       expect(receipt.status).to.equal('rejected');
     });
@@ -430,4 +432,119 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
         await expectRevert(factory.removeMerchant(merchant, {from: other}), 'WFILFactory: caller is not the default admin');
       });
   });
+
+  describe('pausing', function () {
+     it('dao can pause', async function () {
+       const receipt = await factory.pause({ from: dao });
+       expectEvent(receipt, 'Paused', { account: dao });
+
+       expect(await factory.paused()).to.equal(true);
+     });
+
+     it('dao can unpause', async function () {
+       await factory.pause({ from: dao });
+
+       const receipt = await factory.unpause({ from: dao });
+       expectEvent(receipt, 'Unpaused', { account: dao });
+
+       expect(await factory.paused()).to.equal(false);
+     });
+
+     it('custodian cannot set custodian deposit while paused', async function () {
+       await factory.pause({ from: dao });
+
+       await expectRevert(
+         factory.setCustodianDeposit(merchant, deposit, { from: custodian }),
+         'Pausable: paused'
+       );
+     });
+
+     it('merchant cannot set merchant deposit while paused', async function () {
+       await factory.pause({ from: dao });
+
+       await expectRevert(
+         factory.setMerchantDeposit(deposit, { from: merchant }),
+         'Pausable: paused'
+       );
+     });
+
+     it('merchants cannot add mint requests while paused', async function () {
+       await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+       await factory.pause({ from: dao });
+
+       await expectRevert(
+         factory.addMintRequest(amount, txId, custodian, { from: merchant }),
+         'Pausable: paused'
+       );
+     });
+
+     it('merchants cannot cancel mint requests while paused', async function () {
+       await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+       const { logs } = await factory.addMintRequest(amount, txId, custodian, { from: merchant });
+       const requestHash = logs[0].args.requestHash;
+       await factory.pause({ from: dao });
+
+       await expectRevert(
+         factory.cancelMintRequest(requestHash, { from: merchant }),
+         'Pausable: paused'
+       );
+     });
+
+     it('custodians cannot confirm/reject mint requests while paused', async function () {
+       await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+       const { logs } = await factory.addMintRequest(amount, txId, custodian, { from: merchant });
+       const requestHash = logs[0].args.requestHash;
+       await factory.pause({ from: dao });
+
+       await expectRevert(
+         factory.confirmMintRequest(requestHash, { from: custodian }),
+         'Pausable: paused'
+       );
+       await expectRevert(
+         factory.rejectMintRequest(requestHash, { from: custodian }),
+         'Pausable: paused'
+       );
+     });
+
+     it('merchants cannot add burn requests while paused', async function () {
+       await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+       await factory.setMerchantDeposit(deposit, { from: merchant });
+       const { logs } = await factory.addMintRequest(amount, txId, custodian, { from: merchant });
+       const requestHash = logs[0].args.requestHash;
+       await factory.confirmMintRequest(requestHash, { from: custodian });
+       await factory.pause({ from: dao });
+
+       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
+       await expectRevert(
+         factory.burn(amount, custodian, { from: merchant }),
+         'Pausable: paused'
+       );
+     });
+
+     it('custodians cannot confirm/reject burn requests while paused', async function () {
+       await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
+       await factory.setMerchantDeposit(deposit, { from: merchant });
+       const { logs } = await factory.addMintRequest(amount, txId, custodian, { from: merchant });
+       const requestHash = logs[0].args.requestHash;
+       await factory.confirmMintRequest(requestHash, { from: custodian });
+       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
+       const burn = await factory.burn(amount, custodian, { from: merchant });
+       const burnHash = burn.logs[0].args.requestHash;
+
+       await factory.pause({ from: dao });
+
+       await expectRevert(
+         factory.confirmBurnRequest(burnHash, txId, { from: custodian }),
+         'Pausable: paused'
+       );
+       await expectRevert(
+         factory.rejectBurnRequest(burnHash, { from: other }),
+         'Pausable: paused'
+       );
+     });
+
+     it('other accounts cannot pause', async function () {
+       await expectRevert(factory.pause({ from: other }), 'WFILFactory: must have pauser role to pause');
+     });
+ });
 });
