@@ -34,7 +34,7 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
-   
+
   plugins: [
     'truffle-plugin-verify'
   ],
@@ -54,7 +54,7 @@ module.exports = {
         host: "127.0.0.1",     // Localhost (default: none)
         port: 8545,            // Standard Ethereum port (default: none)
         network_id: "*",       // Any network (default: none)
-	gasPrice: "50000000000", // 50 Gwei      
+	gasPrice: "30000000000", // 50 Gwei 
       },
 
       rinkeby: {
@@ -62,7 +62,7 @@ module.exports = {
         network_id: 4, // Rinkeby's network id
         gas: 9000000,
       },
-      
+
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
