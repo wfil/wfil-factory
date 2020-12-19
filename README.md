@@ -78,8 +78,8 @@ Clone this GitHub repository.
 
 ## Development deployment
 **DAO Multisig (Rinkeby):** [0x3bBcA3216Dbafdfa61B3bbAaCb9C6FEbe4C45f2F](https://rinkeby.etherscan.io/address/0x3bbca3216dbafdfa61b3bbaacb9c6febe4c45f2f#code)  
-**WFIL Token 0.7.0 (Rinkeby):** [0xf33b9e9cc559329e25ca76e338e21e8e24e14c24](https://rinkeby.etherscan.io/address/0xf33b9e9cc559329e25ca76e338e21e8e24e14c24#code)   
-**WFIL Factory (Rinkeby):** [0x556f8314a877d025a6bb7dbfe3dcc6e8934ed4ec](https://rinkeby.etherscan.io/address/0x556f8314a877d025a6bb7dbfe3dcc6e8934ed4ec#code)  
+**WFIL (Rinkeby):** [0xA04bbe85d91C3125d577AF17e4EB5d4E579100Cf](https://rinkeby.etherscan.io/address/0xA04bbe85d91C3125d577AF17e4EB5d4E579100Cf#code)   
+**WFIL Factory (Rinkeby):** [0x865FF75B4cB65782aA3Ae0c959a561Ae2f743096](https://rinkeby.etherscan.io/address/0x865FF75B4cB65782aA3Ae0c959a561Ae2f743096#code)  
 
 ## Current Mainnet Contracts (3/12/2020)
 * **WFIL DAO:** [0x44443407e196298a0aD68207Aa93eA919df53961](https://etherscan.io/address/0x44443407e196298a0aD68207Aa93eA919df53961)  
