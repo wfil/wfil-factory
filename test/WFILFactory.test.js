@@ -215,7 +215,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
     });
   });
 
-  describe('burn()', function () {
+  describe('addBurnRequest()', function () {
     beforeEach(async function () {
       await factory.setCustodianDeposit(merchant, deposit, { from: custodian });
       await factory.setMerchantDeposit(deposit, { from: merchant });
@@ -230,7 +230,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       expect(balanceBefore).to.be.bignumber.equal(amount);
 
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
-      await factory.burn(amount, custodian, { from: merchant });
+      await factory.addBurnRequest(amount, custodian, { from: merchant });
 
       const balanceAfter = await wfil.balanceOf(merchant);
       expect(balanceAfter).to.be.bignumber.equal('0');
@@ -241,7 +241,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, {from: custodian});
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
-      const receipt = await factory.burn(amount, custodian, { from: merchant });
+      const receipt = await factory.addBurnRequest(amount, custodian, { from: merchant });
       const timestamp = receipt.logs[0].args.timestamp;
       const burnHash = receipt.logs[0].args.requestHash;
       expectEvent(receipt, 'Burned', { nonce: nonce, requester: merchant, custodian: custodian, amount: amount, deposit: deposit, timestamp: timestamp, requestHash: burnHash });
@@ -252,7 +252,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
-      await expectRevert(factory.burn(amount, custodian, { from: other }),'WFILFactory: caller is not a merchant');
+      await expectRevert(factory.addBurnRequest(amount, custodian, { from: other }),'WFILFactory: caller is not a merchant');
     });
   });
 
@@ -267,7 +267,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
-      const burn = await factory.burn(amount, custodian, { from: merchant });
+      const burn = await factory.addBurnRequest(amount, custodian, { from: merchant });
       const burnHash = burn.logs[0].args.requestHash;
       await factory.confirmBurnRequest(burnHash, txId, { from: custodian });
       const receipt = await factory.getBurnRequest(nonce, {from: other});
@@ -279,7 +279,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, {from: custodian});
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
-      const burn = await factory.burn(amount, custodian, { from: merchant });
+      const burn = await factory.addBurnRequest(amount, custodian, { from: merchant });
       const timestamp = burn.logs[0].args.timestamp;
       const burnHash = burn.logs[0].args.requestHash;
       const receipt = await factory.confirmBurnRequest(burnHash, txId, { from: custodian });
@@ -291,7 +291,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
-      const burn = await factory.burn(amount, custodian, { from: merchant });
+      const burn = await factory.addBurnRequest(amount, custodian, { from: merchant });
       const burnHash = burn.logs[0].args.requestHash;
       await expectRevert(factory.confirmBurnRequest(burnHash, txId, { from: other }),'WFILFactory: caller is not a custodian');
     });
@@ -308,7 +308,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
-      const burn = await factory.burn(amount, custodian, { from: merchant });
+      const burn = await factory.addBurnRequest(amount, custodian, { from: merchant });
       expect(await wfil.balanceOf(merchant)).to.be.bignumber.equal('0');
       const burnHash = burn.logs[0].args.requestHash;
       await factory.rejectBurnRequest(burnHash, { from: custodian });
@@ -322,7 +322,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, {from: custodian});
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
-      const burn = await factory.burn(amount, custodian, { from: merchant });
+      const burn = await factory.addBurnRequest(amount, custodian, { from: merchant });
       const timestamp = burn.logs[0].args.timestamp;
       const burnHash = burn.logs[0].args.requestHash;
       const receipt = await factory.rejectBurnRequest(burnHash, { from: custodian });
@@ -334,7 +334,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
       const requestHash = logs[0].args.requestHash;
       await factory.confirmMintRequest(requestHash, { from: custodian });
       await wfil.increaseAllowance(factory.address, amount, { from: merchant });
-      const burn = await factory.burn(amount, custodian, { from: merchant });
+      const burn = await factory.addBurnRequest(amount, custodian, { from: merchant });
       const burnHash = burn.logs[0].args.requestHash;
       await expectRevert(factory.rejectBurnRequest(burnHash, { from: other }),'WFILFactory: caller is not a custodian');
     });
@@ -516,7 +516,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
 
        await wfil.increaseAllowance(factory.address, amount, { from: merchant });
        await expectRevert(
-         factory.burn(amount, custodian, { from: merchant }),
+         factory.addBurnRequest(amount, custodian, { from: merchant }),
          'Pausable: paused'
        );
      });
@@ -528,7 +528,7 @@ const txId = 'bafkqadlgnfwc6mrpmfrwg33vnz2a'
        const requestHash = logs[0].args.requestHash;
        await factory.confirmMintRequest(requestHash, { from: custodian });
        await wfil.increaseAllowance(factory.address, amount, { from: merchant });
-       const burn = await factory.burn(amount, custodian, { from: merchant });
+       const burn = await factory.addBurnRequest(amount, custodian, { from: merchant });
        const burnHash = burn.logs[0].args.requestHash;
 
        await factory.pause({ from: dao });

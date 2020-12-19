@@ -278,7 +278,7 @@ contract WFILFactory is AccessControl, Pausable {
     /// @dev Set txId as empty since it is not known yet.
     /// @param amount Amount of WFIL to burn
     /// @param custodian Custodian Address
-    function burn(uint256 amount, address custodian) external whenNotPaused {
+    function addBurnRequest(uint256 amount, address custodian) external whenNotPaused {
         require(hasRole(MERCHANT_ROLE, msg.sender), "WFILFactory: caller is not a merchant");
         require(amount > 0, "WFILFactory: amount is zero");
         require(hasRole(CUSTODIAN_ROLE, custodian), "WFILFactory: custodian has not the custodian role");
