@@ -1,7 +1,7 @@
 {
-  "name": "wfil-dao",
+  "name": "wfil-factory",
   "version": "1.0.0",
-  "description": "WFIL DAO",
+  "description": "WFIL Factory",
   "main": "truffle-config.js",
   "directories": {
     "test": "test"
@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wfil/wfil-dao.git"
+    "url": "git+https://github.com/wfil/wfil-factory.git"
   },
   "author": "Nazzareno Massari",
   "license": "AGPL-3.0",
   "bugs": {
-    "url": "https://github.com/wfil/wfil-dao/issues"
+    "url": "https://github.com/wfil/wfil-factory/issues"
   },
-  "homepage": "https://github.com/wfil/wfil-dao#readme",
+  "homepage": "https://github.com/wfil/wfil-factory#readme",
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",
     "@truffle/hdwallet-provider": "^1.2.0",
