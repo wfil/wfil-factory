@@ -81,9 +81,10 @@ Clone this GitHub repository.
 **WFIL (Rinkeby):** [0xA04bbe85d91C3125d577AF17e4EB5d4E579100Cf](https://rinkeby.etherscan.io/address/0xA04bbe85d91C3125d577AF17e4EB5d4E579100Cf#code)   
 **WFIL Factory (Rinkeby):** [0xD27B309B0Fd0E251674a6A52765934ef961E38Df](https://rinkeby.etherscan.io/address/0xD27B309B0Fd0E251674a6A52765934ef961E38Df#code)  
 
-## Current Mainnet Contracts (3/12/2020)
-* **WFIL DAO:** [0x44443407e196298a0aD68207Aa93eA919df53961](https://etherscan.io/address/0x44443407e196298a0aD68207Aa93eA919df53961)  
-* **WFIL:** [0xd187C6C8C6aeE0F021F92cB02887A21D529e26cb](https://etherscan.io/address/0xd187C6C8C6aeE0F021F92cB02887A21D529e26cb#code)  
+## Current Mainnet Contracts
+* **WFIL DAO:** [0x44443407e196298a0aD68207Aa93eA919df53961](https://etherscan.io/address/0x44443407e196298a0aD68207Aa93eA919df53961)
+* **WFIL:** [0xd187C6C8C6aeE0F021F92cB02887A21D529e26cb](https://etherscan.io/address/0xd187C6C8C6aeE0F021F92cB02887A21D529e26cb#code)  (3/12/2020)  
+* **WFIL Factory:** [0x97A995E8b36A14C5586a19a99a282e9B53Ad890D](https://etherscan.io/address/0x97A995E8b36A14C5586a19a99a282e9B53Ad890D#code) (20/12/2020)  
 
 Audit
 =====
