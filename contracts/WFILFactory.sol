@@ -6,7 +6,15 @@ pragma solidity 0.6.12;
 /// @author Nazzareno Massari @naszam
 /// @notice Wrapped Filecoin (WFIL) Factory
 /// @dev All function calls are currently implemented without side effects through TDD approach
-/// @dev OpenZeppelin library is used for secure contract development
+/// @dev OpenZeppelin Library is used for secure contract development
+
+/*
+██     ██ ███████ ██ ██          ███████  █████   ██████ ████████  ██████  ██████  ██    ██ 
+██     ██ ██      ██ ██          ██      ██   ██ ██         ██    ██    ██ ██   ██  ██  ██  
+██  █  ██ █████   ██ ██          █████   ███████ ██         ██    ██    ██ ██████    ████  
+██ ███ ██ ██      ██ ██          ██      ██   ██ ██         ██    ██    ██ ██   ██    ██  
+ ███ ███  ██      ██ ███████     ██      ██   ██  ██████    ██     ██████  ██   ██    ██ 
+*/
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
