@@ -65,7 +65,7 @@ When the **addBurnRequest** is called by a Custodian it generates a Burn Request
 
 The WFILFactory inherits OpenZeppelin AccessControl module to set the Pauser role to the WFIL DAO that can call the pause, unpause functions in case of emergency (Circuit Breaker Design Pattern).
 
-Finally the WFILFactory allows the WFIL DAO to claim ERC20 tokens sent to the contract, including WFIL token, via **reclaimToken** by specifying the the *token* address as well as the *recipient* address to sent the tokens to, that can be sent to a charity or support project in the space via Gitcoin Grants.  
+Finally the WFILFactory allows the WFIL DAO to claim ERC20 tokens sent to the contract, including WFIL token, via **reclaimToken** by specifying the the *token* address as well as the *recipient* address to sent the tokens to, that can be sent to a charities or support projects in the space via Gitcoin Grants.  
 
 Setup
 ============
