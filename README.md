@@ -10,7 +10,7 @@
 > WFIL Factory
 
 WFIL Factory allow Merchants and Custodians to interact with WFIL ERC20 Wrapper.  
-WFIL DAO can add/remove Merchants and Custodians providing trust and transparency for the community.
+WFIL DAO can add/remove Merchants and Custodians providing trust and transparency for the community.  
 Merchants can add WFIL Mint/Burn requests that need to be confirmed by Custodians.  
 
 ## Sections
@@ -86,9 +86,9 @@ Clone this GitHub repository.
 **WFIL Factory (Rinkeby):** [0xD27B309B0Fd0E251674a6A52765934ef961E38Df](https://rinkeby.etherscan.io/address/0xD27B309B0Fd0E251674a6A52765934ef961E38Df#code)  
 
 ## Current Mainnet Contracts
-* **WFIL DAO:** [0x44443407e196298a0aD68207Aa93eA919df53961](https://etherscan.io/address/0x44443407e196298a0aD68207Aa93eA919df53961) 
-* **WFIL:** [0xd187C6C8C6aeE0F021F92cB02887A21D529e26cb](https://etherscan.io/address/0xd187C6C8C6aeE0F021F92cB02887A21D529e26cb#code)  (3/12/2020)  
-* **WFIL Factory:** [0x97A995E8b36A14C5586a19a99a282e9B53Ad890D](https://etherscan.io/address/0x97A995E8b36A14C5586a19a99a282e9B53Ad890D#code) (20/12/2020)  
+* **WFIL DAO:** [0x44443407e196298a0aD68207Aa93eA919df53961](https://etherscan.io/address/0x44443407e196298a0aD68207Aa93eA919df53961) [(Dec-03-2020 06:36:39 PM +UTC)](https://etherscan.io/tx/0x79b397ffc59d4dda40eb3488ba701192c0e433a6f2c6e1cd4903536f049f09af)  
+* **WFIL:** [0xd187C6C8C6aeE0F021F92cB02887A21D529e26cb](https://etherscan.io/address/0xd187C6C8C6aeE0F021F92cB02887A21D529e26cb#code)  [(Dec-03-2020 09:31:02 PM +UTC)](https://etherscan.io/tx/0xd12905b430d37940e9268b068f5ef2fafc302b35e9c2f2a799d0e134a0f2d5eb)  
+* **WFIL Factory:** [0x97A995E8b36A14C5586a19a99a282e9B53Ad890D](https://etherscan.io/address/0x97A995E8b36A14C5586a19a99a282e9B53Ad890D#code) [(Dec-20-2020 11:50:22 PM +UTC)](https://etherscan.io/tx/0x4fe82b203870066a3034dfc1b8df44be620150f6a8f45089ee755cf03073e8f4)  
 
 Audit
 =====
