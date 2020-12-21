@@ -93,11 +93,10 @@ Clone this GitHub repository.
 Audit
 =====
 
-* [Quantstamp]()
+* [Quantstamp](./Quantstamp_Audit_Report.pdf)  
 
 About
 ============
 ## Inspiration & References
 
 [![Awesome WFIL](https://img.shields.io/badge/Awesome-WFIL-blue)](https://github.com/wfil/awesome-wfil/blob/master/README.md#references)
-
