@@ -25,6 +25,43 @@ Merchants can add WFIL Mint/Burn requests that need to be confirmed by Custodian
 
 ### [WFILFactory](./contracts/WFILFactory.sol)
 
+Implements WFIL Factory by leveraging on OpenZeppelin Library.  
+
+It allows the WFIL DAO, *dao_*, to add/remove Merchants via **addMerchant**, **removeMerchant** and to add/remove Custodians via **addCustodian**, **removeCustodian**.  
+
+The WFIFactory contract il linked to WFIL token in the constructor, *wfil_*, allowing Merchants and Custodians to add WFIL Mint/Burn requests via **addMintRequest**, **addBurnRequest**.
+
+The steps needed to Mint WFIL are the following:
+
+* The Custodian need to set the custodian filecoin deposit address via **setCustodianDeposit** by specifying the *merchant* address and the *deposit* address.  
+* The Merchant can add a WFIL Mint Request via **addMintRequest** by specifying the *amount* of WFIL it wants to mint, *txId* correspondent to the filecoin transaction and the *custodian* address (this allow each merchant to opt for a different custodian for each mint request to provide a flexible service).   
+* The Merchant can cancel the WFIL Mint Request via **cancelMintRequest** by specyfing the *requestHash* generated when adding a new mint request.  
+* The Custodian can either confirm the WFIL Mint Request via **confirmMintRequest** by specifying the *requestHash* and calling *wfil.wrap* function or reject the WFIL Mint Request via **rejectMintRequest** by specifying the *requestHash*.
+
+The steps needed to Burn WFIL are the following:
+* The Merchant need to set the merchant filecoin deposit address via **setMerchantDeposit** by specifying the *deposit* address.  
+* The Merchant can add a WFIL Burn Request via **addBurnRequest** by specyfing the *amount* of WFIL it wants to burn and the *custodian* address and calling *wfil.unwrapFrom* function.
+* The Custodian can either confirm the WFIL Burn Request via **confirmBurnRequest** by specyfing the *requestHash* generated when adding an new burn request and *txId* correspondent to the filecoin transaction or reject the WFIL Burn Request via **rejectMintRequest** and returning the amount burned to the merchant via *wfil.wrap* function.
+
+When the **addMintRequest** is called by a Merchant it generates a Mint Request with the following fields:
+* *requester*, Merchant address
+* *custodian*, Custodian address
+* *amount*, WFIL amount to Mint
+* *deposit*, custodian filecoin deposit address, set before by the custodian
+* *txId*, filecoin transaction identifier, passed by the merchant
+* *nonce*, serial number allocated for each mint request, generated via *_mintsIdTracker*
+* *timestamp*, time of the mint request creation, generated via *_timestamp* 
+* *status*, status of the mint request that can be: PENDING, CANCELED, APPROVED, REJECTED
+
+When the **addBurnRequest** is called by a Custodian it generates a Burn Request with the following fields:
+* *requester*, Merchant address
+* *custodian*, Custodian address
+* *amount*, WFIL amount to Burn
+* *deposit*, merchant filecoin deposit address, set before by the merchant
+* *txId*, filecoin transaction identifier, passed by the custodian when confirming the burn request
+* *nonce*, serial number allocated for each mint request, generated via *_burnsIdTracker*
+* *timestamp*, time of the burn request creation, generated via *_timestamp* 
+* *status*, status of the burn request that can be: PENDING, CANCELED, APPROVED, REJECTED
 
 Setup
 ============
