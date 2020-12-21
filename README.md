@@ -29,7 +29,7 @@ Implements WFIL Factory by leveraging on OpenZeppelin Library.
 
 It allows the WFIL DAO, *dao_*, to add/remove Merchants via **addMerchant**, **removeMerchant** and to add/remove Custodians via **addCustodian**, **removeCustodian**.  
 
-The WFIFactory contract il linked to WFIL token in the constructor, *wfil_*, allowing Merchants and Custodians to add WFIL Mint/Burn requests via **addMintRequest**, **addBurnRequest**.
+The WFILFactory contract is linked to WFIL token in the constructor, *wfil_*, allowing Merchants and Custodians to add WFIL Mint/Burn requests via **addMintRequest**, **addBurnRequest**.
 
 The steps needed to Mint WFIL are the following:
 
@@ -62,6 +62,10 @@ When the **addBurnRequest** is called by a Custodian it generates a Burn Request
 * *nonce*, serial number allocated for each mint request, generated via *_burnsIdTracker*
 * *timestamp*, time of the burn request creation, generated via *_timestamp* 
 * *status*, status of the burn request that can be: PENDING, CANCELED, APPROVED, REJECTED
+
+The WFILFactory inherits OpenZeppelin AccessControl module to set the Pauser role to the WFIL DAO that can call the pause, unpause functions in case of emergency (Circuit Breaker Design Pattern).
+
+Finally the WFILFactory allows the WFIL DAO to claim ERC20 tokens sent to the contract, including WFIL token, via **reclaimToken** by specifying the the *token* address as well as the *recipient* address to sent the tokens to, that can be sent to a charity or support project in the space via Gitcoin Grants.  
 
 Setup
 ============
