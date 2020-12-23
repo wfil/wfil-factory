@@ -3,7 +3,7 @@
 [![#built_with_Truffle](https://img.shields.io/badge/built%20with-Truffle-blueviolet?style=plastic)](https://www.trufflesuite.com/)
 [![built-with openzeppelin](https://img.shields.io/badge/built%20with-OpenZeppelin-3677FF?style=plastic)](https://docs.openzeppelin.com/)
 [![#solc 0.6.12](https://img.shields.io/badge/solc-v0.6.12-brown?style=plastic)](https://github.com/ethereum/solidity/releases/tag/v0.6.12)
-[![#mainnet wfil-factory](https://img.shields.io/badge/mainnet-WFILFactory-purple?style=plastic&logo=Ethereum)](https://etherscan.io/address/)
+[![#mainnet wfil-factory](https://img.shields.io/badge/Mainnet-WFILFactory-purple?style=plastic&logo=Ethereum)](https://etherscan.io/address/0x97A995E8b36A14C5586a19a99a282e9B53Ad890D#code)
 
 # WFIL Factory
 
